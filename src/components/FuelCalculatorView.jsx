@@ -25,55 +25,55 @@ export default function FuelCalculatorView() {
   return (
     <div className="p-5 space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500 pb-32">
       <header>
-        <h2 className="text-2xl font-black text-slate-800 tracking-tight">Combustível</h2>
-        <p className="text-slate-500 text-sm">Calcule trajetos e saiba o que compensa.</p>
+        <h2 className="text-2xl font-black text-slate-800 dark:text-slate-100 tracking-tight">Combustível</h2>
+        <p className="text-slate-500 dark:text-slate-400 text-sm">Calcule trajetos e saiba o que compensa.</p>
       </header>
 
       {/* Seção 1: Etanol vs Gasolina */}
-      <section className="bg-white p-6 rounded-[2rem] shadow-sm border border-slate-100">
-        <h3 className="font-black text-slate-800 text-lg mb-1 flex items-center gap-2">
+      <section className="bg-white dark:bg-slate-900 p-6 rounded-[2rem] shadow-sm border border-slate-100 dark:border-slate-800">
+        <h3 className="font-black text-slate-800 dark:text-slate-100 text-lg mb-1 flex items-center gap-2">
           <Fuel className="w-5 h-5 text-indigo-500" /> Etanol vs Gasolina
         </h3>
-        <p className="text-xs text-slate-400 font-bold mb-5">A famosa regra dos 70%.</p>
+        <p className="text-xs text-slate-400 dark:text-slate-500 font-bold mb-5">A famosa regra dos 70%.</p>
 
         <div className="grid grid-cols-2 gap-4 mb-5">
           <div className="space-y-1.5">
-            <label className="text-[10px] font-black text-slate-400 uppercase ml-1">Etanol</label>
+            <label className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase ml-1">Etanol</label>
             <div className="relative">
               <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-sm">R$</span>
               <input
                 type="text" inputMode="numeric" placeholder="0,00"
                 value={ethanolPrice ? parseFloat(ethanolPrice).toLocaleString('pt-BR', { minimumFractionDigits: 2 }) : ''}
                 onChange={(e) => setEthanolPrice(handlePriceMask(e.target.value))}
-                className="w-full bg-slate-50 border border-slate-100 rounded-2xl pl-9 pr-3 py-3 font-bold text-slate-700 outline-none focus:ring-2 focus:ring-indigo-500/20"
+                className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-2xl pl-9 pr-3 py-3 font-bold text-slate-700 dark:text-slate-200 outline-none focus:ring-2 focus:ring-indigo-500/20"
               />
             </div>
           </div>
           <div className="space-y-1.5">
-            <label className="text-[10px] font-black text-slate-400 uppercase ml-1">Gasolina</label>
+            <label className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase ml-1">Gasolina</label>
             <div className="relative">
               <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-sm">R$</span>
               <input
                 type="text" inputMode="numeric" placeholder="0,00"
                 value={gasolinePrice ? parseFloat(gasolinePrice).toLocaleString('pt-BR', { minimumFractionDigits: 2 }) : ''}
                 onChange={(e) => setGasolinePrice(handlePriceMask(e.target.value))}
-                className="w-full bg-slate-50 border border-slate-100 rounded-2xl pl-9 pr-3 py-3 font-bold text-slate-700 outline-none focus:ring-2 focus:ring-indigo-500/20"
+                className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-2xl pl-9 pr-3 py-3 font-bold text-slate-700 dark:text-slate-200 outline-none focus:ring-2 focus:ring-indigo-500/20"
               />
             </div>
           </div>
         </div>
 
         {betterFuel && (
-          <div className={`p-4 rounded-2xl border-2 ${betterFuel === 'Etanol' ? 'bg-emerald-50 border-emerald-100' : 'bg-amber-50 border-amber-100'} flex items-center justify-between`}>
+          <div className={`p-4 rounded-2xl border-2 ${betterFuel === 'Etanol' ? 'bg-emerald-50 dark:bg-emerald-900/20 border-emerald-100 dark:border-emerald-800' : 'bg-amber-50 dark:bg-amber-900/20 border-amber-100 dark:border-amber-800'} flex items-center justify-between`}>
             <div>
               <span className="text-[10px] font-black uppercase tracking-widest block mb-0.5 opacity-60">Abasteça com</span>
-              <span className={`text-xl font-black ${betterFuel === 'Etanol' ? 'text-emerald-700' : 'text-amber-700'}`}>
+              <span className={`text-xl font-black ${betterFuel === 'Etanol' ? 'text-emerald-700 dark:text-emerald-400' : 'text-amber-700 dark:text-amber-400'}`}>
                 {betterFuel}
               </span>
             </div>
             <div className="text-right">
               <span className="text-[10px] font-black uppercase tracking-widest block mb-0.5 opacity-60">Relação</span>
-              <span className={`text-lg font-black ${betterFuel === 'Etanol' ? 'text-emerald-700' : 'text-amber-700'}`}>
+              <span className={`text-lg font-black ${betterFuel === 'Etanol' ? 'text-emerald-700 dark:text-emerald-400' : 'text-amber-700 dark:text-amber-400'}`}>
                 {(ratio * 100).toFixed(1)}%
               </span>
             </div>
