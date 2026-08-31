@@ -1,6 +1,8 @@
-import { Fuel, MapPin } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { Fuel, MapPin, ArrowRightLeft, Loader2, Navigation } from 'lucide-react';
 import { formatCurrency, handlePriceMask } from '../utils/format';
 import { useLocalStorage } from '../hooks/useLocalStorage';
+import CityAutocomplete from './CityAutocomplete';
 
 // --- COMPONENTE: CALCULADORA DE COMBUSTÍVEL ---
 export default function FuelCalculatorView() {
@@ -9,6 +11,32 @@ export default function FuelCalculatorView() {
   const [distance, setDistance] = useLocalStorage('shopsmart_dist', '');
   const [consumption, setConsumption] = useLocalStorage('shopsmart_cons', '');
   const [tripFuelPrice, setTripFuelPrice] = useLocalStorage('shopsmart_tfp', '');
+
+  const [originPlace, setOriginPlace] = useState(null);
+  const [destPlace, setDestPlace] = useState(null);
+  const [routeKey, setRouteKey] = useState(0);
+  const [routeStatus, setRouteStatus] = useState('idle'); // idle | loading | done | error
+
+  useEffect(() => {
+    if (!originPlace || !destPlace) { setRouteStatus('idle'); return; }
+    let cancelled = false;
+    setRouteStatus('loading');
+    fetch(`https://router.project-osrm.org/route/v1/driving/${originPlace.lon},${originPlace.lat};${destPlace.lon},${destPlace.lat}?overview=false`)
+      .then(res => res.json())
+      .then(data => {
+        if (cancelled) return;
+        const meters = data?.routes?.[0]?.distance;
+        if (meters) {
+          setDistance((meters / 1000).toFixed(1));
+          setRouteStatus('done');
+        } else {
+          setRouteStatus('error');
+        }
+      })
+      .catch(() => { if (!cancelled) setRouteStatus('error'); });
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [originPlace, destPlace, routeKey]);
 
   // Cálculos Etanol vs Gasolina (Regra dos 70%)
   const eth = parseFloat(ethanolPrice);
@@ -91,6 +119,39 @@ export default function FuelCalculatorView() {
             <p className="text-xs text-indigo-200 font-bold mb-6">Vai viajar? Calcule o gasto.</p>
 
             <div className="space-y-4 mb-6">
+              <div className="space-y-3 relative">
+                <CityAutocomplete
+                  label="De"
+                  placeholder="Cidade ou endereço de origem"
+                  allowCurrentLocation
+                  onPlaceSelected={setOriginPlace}
+                />
+                <div className="flex justify-center">
+                  <button
+                    type="button"
+                    onClick={() => { setOriginPlace(destPlace); setDestPlace(originPlace); setRouteKey(k => k + 1); }}
+                    className="w-8 h-8 bg-white/10 hover:bg-white/20 rounded-full flex items-center justify-center transition-colors"
+                  >
+                    <ArrowRightLeft className="w-3.5 h-3.5 text-indigo-200" />
+                  </button>
+                </div>
+                <CityAutocomplete
+                  label="Para"
+                  placeholder="Cidade ou endereço de destino"
+                  onPlaceSelected={setDestPlace}
+                />
+              </div>
+
+              {routeStatus === 'loading' && (
+                <p className="text-xs font-bold text-indigo-200 flex items-center gap-1.5"><Loader2 className="w-3.5 h-3.5 animate-spin" /> Calculando rota...</p>
+              )}
+              {routeStatus === 'done' && (
+                <p className="text-xs font-bold text-emerald-300 flex items-center gap-1.5"><Navigation className="w-3.5 h-3.5" /> Rota calculada automaticamente</p>
+              )}
+              {routeStatus === 'error' && (
+                <p className="text-xs font-bold text-amber-300">Não foi possível calcular a rota. Informe a distância manualmente abaixo.</p>
+              )}
+
               <div className="flex gap-4">
                 <div className="flex-1 space-y-1">
                   <label className="text-[10px] font-black text-indigo-200 uppercase ml-1">Distância (km)</label>
