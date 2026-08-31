@@ -124,6 +124,7 @@ export default function FuelCalculatorView() {
                   label="De"
                   placeholder="Cidade ou endereço de origem"
                   allowCurrentLocation
+                  place={originPlace}
                   onPlaceSelected={setOriginPlace}
                 />
                 <div className="flex justify-center">
@@ -138,6 +139,7 @@ export default function FuelCalculatorView() {
                 <CityAutocomplete
                   label="Para"
                   placeholder="Cidade ou endereço de destino"
+                  place={destPlace}
                   onPlaceSelected={setDestPlace}
                 />
               </div>
@@ -151,6 +153,8 @@ export default function FuelCalculatorView() {
               {routeStatus === 'error' && (
                 <p className="text-xs font-bold text-amber-300">Não foi possível calcular a rota. Informe a distância manualmente abaixo.</p>
               )}
+
+              <p className="text-[9px] text-indigo-300/70 font-medium">Busca e rota via © colaboradores do OpenStreetMap</p>
 
               <div className="flex gap-4">
                 <div className="flex-1 space-y-1">

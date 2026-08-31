@@ -4,12 +4,22 @@ import { LocateFixed, Loader2 } from 'lucide-react';
 // Busca de cidade/endereço via Nominatim (OpenStreetMap) — serviço público e
 // gratuito, sem conta nem chave de API. Debounce de 700ms para respeitar o
 // limite de uso deles (no máx. ~1 requisição por segundo).
-export default function CityAutocomplete({ label, placeholder, onPlaceSelected, allowCurrentLocation }) {
-  const [query, setQuery] = useState('');
+export default function CityAutocomplete({ label, placeholder, place, onPlaceSelected, allowCurrentLocation }) {
+  const [query, setQuery] = useState(place?.label || '');
   const [results, setResults] = useState([]);
-  const [selected, setSelected] = useState(null);
+  const [selected, setSelected] = useState(place || null);
   const [loading, setLoading] = useState(false);
   const [locating, setLocating] = useState(false);
+
+  // Mantém o texto exibido em sincronia quando o pai troca o valor por fora
+  // (ex: botão de trocar origem/destino), sem atrapalhar o usuário digitando.
+  useEffect(() => {
+    if (place?.label === selected?.label) return;
+    setSelected(place || null);
+    setQuery(place?.label || '');
+    setResults([]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [place]);
 
   useEffect(() => {
     if (selected || query.trim().length < 3) return;
@@ -85,9 +95,12 @@ export default function CityAutocomplete({ label, placeholder, onPlaceSelected, 
         placeholder={placeholder}
         className="w-full bg-white/10 border border-white/20 rounded-2xl px-4 py-3 font-bold text-white placeholder:text-indigo-300 outline-none focus:bg-white/20 transition-all"
       />
-      {(results.length > 0 || loading) && (
+      {(results.length > 0 || loading || (query.trim().length >= 3 && !selected && !loading)) && (
         <div className="absolute z-20 mt-1 w-full bg-white dark:bg-slate-800 rounded-2xl shadow-xl border border-slate-100 dark:border-slate-700 overflow-hidden max-h-56 overflow-y-auto">
           {loading && <div className="px-4 py-2.5 text-xs font-bold text-slate-400">Buscando...</div>}
+          {!loading && results.length === 0 && query.trim().length >= 3 && !selected && (
+            <div className="px-4 py-2.5 text-xs font-bold text-slate-400">Nenhum resultado encontrado</div>
+          )}
           {results.map((item) => (
             <button
               key={item.place_id}
