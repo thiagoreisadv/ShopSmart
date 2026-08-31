@@ -84,7 +84,11 @@ export default function ComparatorView({
     setUndoState(null);
   };
 
-  const removeMarket = (marketId) => setMarkets(markets.filter(m => m.id !== marketId));
+  const removeMarket = (marketId) => {
+    const market = markets.find(m => m.id === marketId);
+    if (market && !window.confirm(`Remover "${market.name}"? Os preços cadastrados para esse mercado serão perdidos.`)) return;
+    setMarkets(markets.filter(m => m.id !== marketId));
+  };
 
   const totals = useMemo(() => {
     const calc = {};
@@ -149,8 +153,9 @@ export default function ComparatorView({
 
   const sortedProducts = useMemo(() => {
     return [...products].sort((a, b) => {
-      if (a.inCart === b.inCart) return 0;
-      return a.inCart ? 1 : -1;
+      if (a.inCart !== b.inCart) return a.inCart ? 1 : -1;
+      if (a.isEssential !== b.isEssential) return a.isEssential ? -1 : 1;
+      return 0;
     });
   }, [products]);
 

@@ -60,7 +60,10 @@ export default function ListSwitcherModal({
                   </button>
                   <button onClick={() => startEditing(list)} className="text-slate-300 hover:text-indigo-500 flex-shrink-0 transition-colors"><Pencil className="w-4 h-4" /></button>
                   {lists.length > 1 && (
-                    <button onClick={() => onDelete(list.id)} className="text-slate-300 hover:text-rose-500 flex-shrink-0 transition-colors"><Trash2 className="w-4 h-4" /></button>
+                    <button
+                      onClick={() => { if (window.confirm(`Excluir a lista "${list.name}" e todos os seus itens? Essa ação não pode ser desfeita.`)) onDelete(list.id); }}
+                      className="text-slate-300 hover:text-rose-500 flex-shrink-0 transition-colors"
+                    ><Trash2 className="w-4 h-4" /></button>
                   )}
                 </>
               )}
