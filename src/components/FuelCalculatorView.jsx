@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Fuel, MapPin, ArrowRightLeft, Loader2, Navigation } from 'lucide-react';
+import { Fuel, MapPin, ArrowRightLeft, Loader2, Navigation, Repeat } from 'lucide-react';
 import { formatCurrency, handlePriceMask } from '../utils/format';
 import { useLocalStorage } from '../hooks/useLocalStorage';
 import CityAutocomplete from './CityAutocomplete';
@@ -11,6 +11,7 @@ export default function FuelCalculatorView() {
   const [distance, setDistance] = useLocalStorage('shopsmart_dist', '');
   const [consumption, setConsumption] = useLocalStorage('shopsmart_cons', '');
   const [tripFuelPrice, setTripFuelPrice] = useLocalStorage('shopsmart_tfp', '');
+  const [roundTrip, setRoundTrip] = useLocalStorage('shopsmart_roundtrip', false);
 
   const [originPlace, setOriginPlace] = useState(null);
   const [destPlace, setDestPlace] = useState(null);
@@ -48,7 +49,8 @@ export default function FuelCalculatorView() {
   const d = parseFloat(distance);
   const c = parseFloat(consumption);
   const p = parseFloat(tripFuelPrice);
-  const tripCost = (d && c && p) ? (d / c) * p : null;
+  const effectiveDistance = d ? (roundTrip ? d * 2 : d) : null;
+  const tripCost = (effectiveDistance && c && p) ? (effectiveDistance / c) * p : null;
 
   return (
     <div className="p-5 space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500 pb-32">
@@ -175,6 +177,19 @@ export default function FuelCalculatorView() {
                 </div>
               </div>
 
+              <button
+                type="button"
+                onClick={() => setRoundTrip(!roundTrip)}
+                className={`w-full flex items-center justify-between px-4 py-3 rounded-2xl border transition-all ${roundTrip ? 'bg-white/20 border-white/30' : 'bg-white/5 border-white/10 hover:bg-white/10'}`}
+              >
+                <span className="flex items-center gap-2 text-xs font-black text-white uppercase tracking-widest">
+                  <Repeat className="w-3.5 h-3.5" /> Ida e volta
+                </span>
+                <span className={`w-10 h-6 rounded-full relative transition-colors ${roundTrip ? 'bg-emerald-400' : 'bg-white/20'}`}>
+                  <span className={`absolute top-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${roundTrip ? 'translate-x-4' : 'translate-x-0.5'}`} />
+                </span>
+              </button>
+
               <div className="space-y-1">
                 <label className="text-[10px] font-black text-indigo-200 uppercase ml-1">Preço na Bomba</label>
                 <div className="relative">
@@ -191,7 +206,10 @@ export default function FuelCalculatorView() {
 
             {tripCost !== null && (
               <div className="bg-white/10 backdrop-blur-md border border-white/20 p-4 rounded-2xl flex items-center justify-between">
-                <span className="text-[10px] font-black uppercase tracking-widest text-indigo-100">Custo Total</span>
+                <div>
+                  <span className="text-[10px] font-black uppercase tracking-widest text-indigo-100">Custo Total</span>
+                  {roundTrip && <span className="text-[10px] font-bold text-indigo-200 block">{effectiveDistance.toFixed(1)} km (ida e volta)</span>}
+                </div>
                 <span className="text-2xl font-black text-white">{formatCurrency(tripCost)}</span>
               </div>
             )}
