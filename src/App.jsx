@@ -1,8 +1,9 @@
 import { useState } from 'react';
-import { ShoppingCart, Smartphone, ListPlus, Scale, Fuel, Sun, Moon } from 'lucide-react';
+import { ShoppingCart, Smartphone, ListPlus, Scale, Fuel, Wallet, Sun, Moon } from 'lucide-react';
 import ComparatorView from './components/ComparatorView';
 import UnitCalculatorView from './components/UnitCalculatorView';
 import FuelCalculatorView from './components/FuelCalculatorView';
+import FinanceView from './components/FinanceView';
 import { useLists } from './hooks/useLists';
 import { useTheme } from './hooks/useTheme';
 
@@ -49,6 +50,7 @@ export default function App() {
         )}
         {activeTab === 'calc' && <UnitCalculatorView />}
         {activeTab === 'fuel' && <FuelCalculatorView />}
+        {activeTab === 'finance' && <FinanceView />}
 
         {/* Assinatura Thiago de Souza Reis */}
         <footer className="py-10 text-center">
@@ -79,6 +81,13 @@ export default function App() {
         >
           <Fuel className="w-5 h-5" />
           <span className="text-[8px] font-black uppercase tracking-[0.2em]">Trajeto</span>
+        </button>
+        <button
+          onClick={() => setActiveTab('finance')}
+          className={`flex-1 flex flex-col items-center justify-center gap-1.5 py-3 rounded-[2rem] transition-all duration-500 ${activeTab === 'finance' ? 'bg-indigo-600 text-white shadow-xl shadow-indigo-200 dark:shadow-none translate-y-[-10px]' : 'text-slate-400 dark:text-slate-500 hover:text-indigo-400'}`}
+        >
+          <Wallet className="w-5 h-5" />
+          <span className="text-[8px] font-black uppercase tracking-[0.2em]">Financeiro</span>
         </button>
       </nav>
     </div>
