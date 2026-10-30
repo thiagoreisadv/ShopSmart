@@ -19,6 +19,7 @@ export default function BarcodeScannerModal({ onClose, onDetected }) {
     const codeReader = new BrowserMultiFormatReader();
 
     const lookupProduct = async (code) => {
+      if (navigator.vibrate) navigator.vibrate(150);
       setStatus('looking-up');
       setScannedCode(code);
       try {
@@ -49,9 +50,16 @@ export default function BarcodeScannerModal({ onClose, onDetected }) {
       if (cancelled) { controls.stop(); return; }
       controlsRef.current = controls;
       setStatus('scanning');
-    }).catch(() => {
-      if (!cancelled) {
-        setStatus('error');
+    }).catch((err) => {
+      if (cancelled) return;
+      setStatus('error');
+      if (err?.name === 'NotAllowedError') {
+        setErrorMessage('Permissão da câmera negada. Habilite o acesso à câmera nas configurações do navegador para escanear.');
+      } else if (err?.name === 'NotFoundError') {
+        setErrorMessage('Nenhuma câmera foi encontrada neste dispositivo.');
+      } else if (err?.name === 'NotReadableError') {
+        setErrorMessage('A câmera está sendo usada por outro aplicativo.');
+      } else {
         setErrorMessage('Não foi possível acessar a câmera. Verifique as permissões do navegador.');
       }
     });
@@ -75,7 +83,10 @@ export default function BarcodeScannerModal({ onClose, onDetected }) {
         <div className="relative bg-slate-900 rounded-3xl overflow-hidden aspect-square flex items-center justify-center">
           <video ref={videoRef} className="w-full h-full object-cover" muted playsInline />
           {status === 'scanning' && (
-            <div className="absolute inset-8 border-2 border-emerald-400/70 rounded-2xl pointer-events-none" />
+            <div className="absolute inset-8 rounded-2xl pointer-events-none overflow-hidden">
+              <div className="absolute inset-0 border-2 border-emerald-400/70 rounded-2xl" />
+              <div className="absolute inset-x-2 h-0.5 bg-emerald-400/80 shadow-[0_0_8px_2px_rgba(52,211,153,0.6)] animate-scan-line" />
+            </div>
           )}
           {(status === 'starting' || status === 'looking-up') && (
             <div className="absolute inset-0 bg-slate-900/70 flex items-center justify-center">

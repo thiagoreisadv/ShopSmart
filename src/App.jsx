@@ -19,7 +19,7 @@ export default function App() {
           <div className="bg-indigo-600 p-2 rounded-2xl shadow-lg shadow-indigo-200 dark:shadow-none">
             <ShoppingCart className="w-5 h-5 text-white" />
           </div>
-          <span className="font-black text-xl text-slate-900 dark:text-white tracking-tighter italic uppercase">ShopSmart</span>
+          <span className="font-black text-xl text-slate-900 dark:text-white tracking-tighter italic uppercase">ReisSmart</span>
         </div>
         <div className="flex items-center gap-3">
           <button
