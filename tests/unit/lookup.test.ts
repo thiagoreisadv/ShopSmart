@@ -110,7 +110,7 @@ describe('consulta de código de barras', () => {
 
   it('limite de taxa: espera entre chamadas ao mesmo host', async () => {
     const sleeps: number[] = []
-    let t = 0
+    const t = 0
     const f = vi.fn(async (url: string) => (String(url).includes('manifest') ? new Response('', { status: 404 }) : json({ status: 0 })))
     await lookupBarcode(CODE, { fetch: f as never, now: () => t, minIntervalMs: 700, sleep: async (ms) => void sleeps.push(ms) })
     await lookupBarcode('7891000100202'.slice(0, 12) + '5', { fetch: f as never, now: () => t, minIntervalMs: 700, sleep: async (ms) => void sleeps.push(ms) })

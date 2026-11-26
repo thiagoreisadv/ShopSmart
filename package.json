@@ -14,7 +14,10 @@
     "test:e2e": "playwright test",
     "catalog:build": "node scripts/catalog/build.mjs",
     "catalog:test": "node --test scripts/catalog/",
-    "icons": "node scripts/make-icons.mjs"
+    "icons": "node scripts/make-icons.mjs",
+    "predev": "node scripts/copy-ocr-assets.mjs",
+    "prebuild": "node scripts/copy-ocr-assets.mjs",
+    "prepreview": "node scripts/copy-ocr-assets.mjs"
   },
   "dependencies": {
     "@zxing/library": "^0.21.3",
@@ -27,6 +30,7 @@
   "devDependencies": {
     "@eslint/js": "^10.0.1",
     "@playwright/test": "^1.65.1",
+    "@tesseract.js-data/por": "^1.0.0",
     "@testing-library/jest-dom": "^8.0.0",
     "@testing-library/react": "^16.3.3",
     "@testing-library/user-event": "^14.6.13",

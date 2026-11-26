@@ -45,3 +45,12 @@ export function haptic(kind: 'tap' | 'success' | 'warn' | 'error' = 'tap'): void
     /* ignore */
   }
 }
+
+/** Pedido para iniciar uma compra já vinculada a uma lista (ex.: botão na tela de listas). */
+let pendingStartList: string | null = null
+export const setPendingStartList = (id: string | null) => (pendingStartList = id)
+export const takePendingStartList = (): string | null => {
+  const v = pendingStartList
+  pendingStartList = null
+  return v
+}

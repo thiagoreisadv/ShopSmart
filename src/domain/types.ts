@@ -160,8 +160,6 @@ export interface Settings {
   haptics: boolean
   reducedMotion: 'system' | 'on' | 'off'
   defaultCity: string
-  /** guardar a foto das etiquetas após o OCR (padrão: descartar) */
-  keepOcrPhotos: boolean
   goals: Goals
   catalogLookupExternal: boolean
 }
@@ -169,7 +167,6 @@ export const DEFAULT_SETTINGS: Settings = {
   haptics: true,
   reducedMotion: 'system',
   defaultCity: '',
-  keepOcrPhotos: false,
   goals: { monthlyBudgetCents: 0, monthlySavingsGoalCents: 0, perPurchaseLimitCents: 0 },
   catalogLookupExternal: true,
 }

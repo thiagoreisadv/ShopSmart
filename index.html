@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="theme-color" content="#059669" />
+    <meta name="description" content="ShopSmart — Compre melhor. Economize mais. Listas, compra inteligente, comparação de preços e controle financeiro." />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="ShopSmart" />
+    <link rel="icon" type="image/svg+xml" href="%BASE_URL%favicon.svg" />
+    <link rel="apple-touch-icon" href="%BASE_URL%icons/apple-touch-icon.png" />
+    <link rel="manifest" href="%BASE_URL%manifest.webmanifest" />
+    <title>ShopSmart</title>
+    <style>
+      /* tela de carregamento inicial, antes do JS */
+      #boot { position: fixed; inset: 0; display: grid; place-items: center; background: #f8fafc; }
+      #boot div { width: 64px; height: 64px; border-radius: 20px; background: #059669; }
+      @media (prefers-color-scheme: dark) { #boot { background: #0b1120; } }
+    </style>
+  </head>
+  <body>
+    <div id="root"><div id="boot" aria-hidden="true"><div></div></div></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

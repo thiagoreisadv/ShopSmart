@@ -32,6 +32,7 @@ function swPrecache(): Plugin {
           f !== 'sw.js' &&
           !f.startsWith('catalog/') &&
           !/tesseract|\.traineddata/i.test(f) &&
+          !f.startsWith('ocr/') &&
           !f.endsWith('.map'),
       )
       const hash = createHash('sha256')
@@ -41,7 +42,7 @@ function swPrecache(): Plugin {
       let sw = readFileSync(swPath, 'utf8')
       sw = sw
         .replace('__SW_VERSION__', version)
-        .replace('__PRECACHE__', JSON.stringify(precache))
+        .replace('/*__PRECACHE__*/', precache.map((f) => JSON.stringify(f)).join(', '))
       writeFileSync(swPath, sw)
     },
   }
