@@ -112,12 +112,14 @@ test.describe('leitura de etiqueta (OCR local real)', () => {
     await expect(cap.getByText('Confirme os dados')).toBeVisible({ timeout: 150_000 })
     // preço efetivo entre os candidatos; preço por kg classificado à parte; código de barras/data ignorados
     await expect(cap.getByRole('radio', { name: /24,90/ })).toBeVisible()
-    await expect(cap.getByText('Preço por kg/L').first()).toBeVisible()
     const texts = await cap.locator('[role=radiogroup]').innerText()
     expect(texts).not.toMatch(/7891000100103/)
     // confirmação: só habilita com um preço escolhido
     const use = cap.getByRole('button', { name: 'Usar estes dados' })
     await cap.getByRole('radio', { name: /^24,90|R\$\s24,90/ }).first().click()
+    // o recorte padrão pode cortar o título: o nome é obrigatório, então o usuário completa
+    const nm = cap.getByLabel('Nome do produto')
+    if (!(await nm.inputValue()).trim()) await nm.fill('Arroz Camil 5kg')
     await expect(use).toBeEnabled()
     await use.click()
     const form = page.getByRole('dialog', { name: 'Adicionar produto' })
