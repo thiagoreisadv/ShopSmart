@@ -48,7 +48,7 @@ export async function addManual(page: Page, name: string, priceDigits: string, q
   const dlg = page.getByRole('dialog', { name: 'Adicionar produto' })
   await dlg.getByLabel('Nome', { exact: true }).fill(name)
   await dlg.getByLabel(/Preço atual/).fill(priceDigits)
-  if (qty !== '1') await dlg.getByLabel('Quantidade').fill(qty)
+  if (qty !== '1') await dlg.getByLabel('Quantidade', { exact: true }).fill(qty)
   await dlg.getByRole('button', { name: 'Adicionar ao carrinho' }).click()
   await expect(dlg).toBeHidden()
 }

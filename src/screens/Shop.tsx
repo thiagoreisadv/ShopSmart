@@ -99,9 +99,9 @@ function StartSheet({ open, onClose, presetList }: { open: boolean; onClose: () 
   )
 }
 
-function Idle() {
+function Idle({ autoOpen }: { autoOpen?: boolean }) {
   const [preset] = useState(() => takePendingStartList() ?? undefined)
-  const [open, setOpen] = useState(!!preset)
+  const [open, setOpen] = useState(!!preset || !!autoOpen)
   const supermarkets = useAppState((s) => s.supermarkets)
   return (
     <Page title="Compra" subtitle="Registre os preços enquanto compra">
@@ -290,7 +290,7 @@ function Done({ purchase, onNew }: { purchase: Purchase; onNew: () => void }) {
 /* ============================ Compra ativa ============================ */
 type LookupState = { status: 'loading' | 'done'; code: string; outcome?: LookupOutcome } | null
 
-function Active({ purchase }: { purchase: Purchase }) {
+function Active({ purchase, onDone }: { purchase: Purchase; onDone: (p: Purchase) => void }) {
   const listData = useAppState((s) => s.listData)
   const listName = useAppState((s) => s.lists.find((l) => l.id === purchase.listId)?.name ?? '')
   const externalEnabled = useAppState((s) => s.settings.catalogLookupExternal)
@@ -304,7 +304,6 @@ function Active({ purchase }: { purchase: Purchase }) {
   const [finalize, setFinalize] = useState(false)
   const [cancelAsk, setCancelAsk] = useState(false)
   const [budgetOpen, setBudgetOpen] = useState(false)
-  const [done, setDone] = useState<Purchase | null>(null)
   const [catOpen, setCatOpen] = useState(false)
   const [listOpen, setListOpen] = useState(false)
   const abortRef = useRef<AbortController | null>(null)
@@ -393,11 +392,9 @@ function Active({ purchase }: { purchase: Purchase }) {
 
   useEffect(() => () => abortRef.current?.abort(), [])
 
-  if (done) return <Done purchase={done} onNew={() => setDone(null)} />
-
   return (
     <>
-      <div className="content stack" style={{ paddingTop: 0 }}>
+      <div className="content stack with-dock" style={{ paddingTop: 0 }}>
         <div className="cart-bar" role="region" aria-label="Resumo do carrinho">
           <div className="row between">
             <div style={{ minWidth: 0 }}>
@@ -518,7 +515,7 @@ function Active({ purchase }: { purchase: Purchase }) {
         sourceNote={sourceNote}
         onScanPrice={editing ? undefined : () => { setItemOpen(false); setOcr('price') }}
       />
-      <FinalizeSheet purchase={purchase} open={finalize} onClose={() => setFinalize(false)} onDone={(p) => { setFinalize(false); setDone(p) }} />
+      <FinalizeSheet purchase={purchase} open={finalize} onClose={() => setFinalize(false)} onDone={(p) => { setFinalize(false); onDone(p) }} />
       <BudgetSheet open={budgetOpen} onClose={() => setBudgetOpen(false)} purchase={purchase} />
       <ConfirmDialog
         open={cancelAsk}
@@ -550,5 +547,9 @@ function BudgetSheet({ open, onClose, purchase }: { open: boolean; onClose: () =
 
 export default function Shop() {
   const active = useAppState(selectActivePurchase)
-  return active ? <Active purchase={active} /> : <Idle />
+  const [done, setDone] = useState<Purchase | null>(null)
+  const [autoStart, setAutoStart] = useState(false)
+  // a compra finalizada deixa de ser "ativa": o resumo vive aqui, acima da tela da compra
+  if (done && !active) return <Done purchase={done} onNew={() => { setDone(null); setAutoStart(true) }} />
+  return active ? <Active purchase={active} onDone={setDone} /> : <Idle autoOpen={autoStart} />
 }
