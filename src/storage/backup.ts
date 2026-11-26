@@ -232,11 +232,28 @@ export async function restoreBackup(file: BackupFile, mode: 'merge' | 'replace',
   const meta = (await kvGet<ListMeta[]>('listsMeta')) ?? []
   const metaIds = new Set(meta.map((m) => m.id))
   for (const l of d.listsMeta ?? []) {
+    const inc = d.lists?.[l.id]
     if (!metaIds.has(l.id)) {
       meta.push(l)
       added++
-      if (d.lists?.[l.id]) await kvSet(`list:${l.id}`, d.lists[l.id])
-    } else dup++
+      if (inc) await kvSet(`list:${l.id}`, inc)
+      continue
+    }
+    const cur = await kvGet<ListData>(`list:${l.id}`)
+    const same = cur && inc && JSON.stringify(cur.products) === JSON.stringify(inc.products) && cur.budget === inc.budget
+    if (same || !inc) {
+      dup++
+    } else if (!cur || (cur.products.length === 0 && cur.history.length === 0)) {
+      // lista local ainda vazia (ex.: instalação nova): usa a do backup
+      await kvSet(`list:${l.id}`, inc)
+      updated++
+    } else {
+      // conflito real: nada é sobrescrito; a lista do backup entra como uma nova lista
+      const nid = uid('l')
+      meta.push({ id: nid, name: `${l.name} (backup)`, createdAt: Date.now() })
+      await kvSet(`list:${nid}`, inc)
+      added++
+    }
   }
   if (meta.length) await kvSet('listsMeta', meta)
   if (d.supermarkets?.length) {

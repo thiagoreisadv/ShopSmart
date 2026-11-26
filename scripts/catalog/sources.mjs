@@ -1,7 +1,6 @@
 // Leitura das fontes públicas oficiais (exportações em massa e deltas) — sem scraping de supermercados.
 import { createGunzip } from 'node:zlib'
-import { createInterface } from 'node:readline'
-import { Readable } from 'node:stream'
+import { Readable, pipeline } from 'node:stream'
 import { toRecord } from './lib.mjs'
 
 export const URLS = {
@@ -38,15 +37,30 @@ export async function httpText(url, fetchImpl = fetch, opts) {
   return Buffer.concat(chunks).toString('utf8')
 }
 
+/** Itera linhas de um stream (gz opcional). Erros de leitura/descompressão rejeitam a iteração. */
+async function* linesOf(stream, gz) {
+  const src = gz ? pipeline(stream, createGunzip(), () => {}) : stream
+  const dec = new TextDecoder('utf-8')
+  let tail = ''
+  for await (const chunk of src) {
+    tail += dec.decode(chunk, { stream: true })
+    let i
+    while ((i = tail.indexOf('\n')) >= 0) {
+      yield tail.slice(0, i).replace(/\r$/, '')
+      tail = tail.slice(i + 1)
+    }
+  }
+  tail += dec.decode()
+  if (tail) yield tail.replace(/\r$/, '')
+}
+
 /** Lê um CSV/TSV (opcionalmente .gz) em streaming e chama onRecord(code,row) para cada produto aceito. */
 export async function readCsv(stream, source, onRecord, { gz = true, limit = Infinity } = {}) {
-  const input = gz ? stream.pipe(createGunzip()) : stream
-  const rl = createInterface({ input, crlfDelay: Infinity })
   let header = null
   let idx = {}
   let seen = 0
   let kept = 0
-  for await (const line of rl) {
+  for await (const line of linesOf(stream, gz)) {
     if (!header) {
       header = line.split('\t')
       idx = Object.fromEntries(header.map((h, i) => [h, i]))
@@ -75,15 +89,15 @@ export async function readCsv(stream, source, onRecord, { gz = true, limit = Inf
       onRecord(rec.code, rec.row)
     }
   }
+  if (!header) throw new Error('arquivo vazio')
   return { seen, kept }
 }
 
 /** Lê arquivo delta (JSON por linha, .gz) da Open Food Facts. */
 export async function readDelta(stream, source, onRecord) {
-  const rl = createInterface({ input: stream.pipe(createGunzip()), crlfDelay: Infinity })
   let seen = 0
   let kept = 0
-  for await (const line of rl) {
+  for await (const line of linesOf(stream, true)) {
     if (!line.trim()) continue
     seen++
     let p

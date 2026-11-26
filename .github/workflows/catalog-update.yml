@@ -1,0 +1,75 @@
+name: Atualizar catálogo de produtos
+
+# Robô diário. Guarda o catálogo na branch órfã `catalog-data` (nunca na principal) e só publica
+# depois de validar. Se uma fonte falhar, o último catálogo válido é mantido.
+on:
+  schedule:
+    - cron: '17 5 * * *' # todos os dias, 05:17 UTC
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: 'delta = incremental (padrão) · full = reimportação completa (baixa ~1 GB da Open Food Facts)'
+        type: choice
+        options: [delta, full]
+        default: delta
+
+permissions:
+  contents: write
+  actions: write # reativar o agendamento e disparar o deploy
+
+concurrency:
+  group: catalog-update
+  cancel-in-progress: false
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Obter o catálogo atual (branch catalog-data)
+        run: |
+          mkdir -p .catalog-work
+          if git ls-remote --exit-code --heads origin catalog-data >/dev/null 2>&1; then
+            git clone --depth 1 --branch catalog-data "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" .catalog-work/data
+          else
+            mkdir -p .catalog-work/data && git -C .catalog-work/data init -b catalog-data
+            git -C .catalog-work/data remote add origin "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git"
+          fi
+
+      - name: Gerar catálogo
+        id: build
+        run: node scripts/catalog/build.mjs --data .catalog-work/data --mode "${{ github.event.inputs.mode || 'delta' }}"
+
+      - name: Publicar na branch catalog-data (somente se houver mudança)
+        id: push
+        working-directory: .catalog-work/data
+        run: |
+          git config user.name "shopsmart-catalog-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add -A
+          if git diff --cached --quiet; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"; echo "Sem mudanças."
+          else
+            git commit -m "catálogo: atualização de $(date -u +%F)" 
+            git push origin HEAD:catalog-data
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Disparar publicação do site com o catálogo novo
+        if: steps.push.outputs.changed == 'true' && github.event_name == 'schedule'
+        run: gh workflow run deploy.yml --ref main -f confirm=publicar || echo "deploy ainda não habilitado"
+        env:
+          GH_TOKEN: ${{ github.token }}
+
+      # O GitHub desativa workflows agendados após 60 dias sem atividade no repositório.
+      # O commit diário na branch catalog-data (status.json muda a cada execução) já conta como atividade;
+      # reativar o workflow reforça a proteção.
+      - name: Manter o agendamento ativo
+        run: gh workflow enable catalog-update.yml || true
+        env:
+          GH_TOKEN: ${{ github.token }}

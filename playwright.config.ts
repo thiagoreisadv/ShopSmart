@@ -20,7 +20,7 @@ export default defineConfig({
     { name: 'desktop', use: { viewport: { width: 1280, height: 800 }, launchOptions } },
   ],
   webServer: {
-    command: 'npm run build && npm run preview',
+    command: 'npm run preview',
     url: base,
     reuseExistingServer: true,
     timeout: 120_000,

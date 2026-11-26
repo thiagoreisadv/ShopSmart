@@ -11,13 +11,14 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:e2e": "playwright test",
+    "test:e2e": "npm run build && playwright test",
     "catalog:build": "node scripts/catalog/build.mjs",
-    "catalog:test": "node --test scripts/catalog/",
+    "catalog:test": "vitest run scripts/catalog",
     "icons": "node scripts/make-icons.mjs",
     "predev": "node scripts/copy-ocr-assets.mjs",
     "prebuild": "node scripts/copy-ocr-assets.mjs",
-    "prepreview": "node scripts/copy-ocr-assets.mjs"
+    "prepreview": "node scripts/copy-ocr-assets.mjs",
+    "test:all": "npm run lint && npm run typecheck && npm test && npm run test:e2e"
   },
   "dependencies": {
     "@zxing/library": "^0.21.3",
