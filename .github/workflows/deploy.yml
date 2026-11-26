@@ -1,0 +1,66 @@
+name: Publicar no GitHub Pages
+
+# Publicação MANUAL. A versão atualmente publicada (gh-pages) permanece intacta até que:
+#  1) este PR seja aprovado e mesclado, e
+#  2) em Settings › Pages, a origem seja trocada para "GitHub Actions", e
+#  3) este workflow seja executado com confirm=publicar.
+on:
+  workflow_dispatch:
+    inputs:
+      confirm:
+        description: 'Digite "publicar" para confirmar'
+        required: true
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    if: github.event.inputs.confirm == 'publicar'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm run build
+      - name: Adicionar o catálogo de produtos (se já existir)
+        run: |
+          if git ls-remote --exit-code --heads origin catalog-data >/dev/null 2>&1; then
+            git clone --depth 1 --branch catalog-data "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" .catalog-data
+            mkdir -p dist/catalog && cp -r .catalog-data/catalog/. dist/catalog/
+            rm -f dist/catalog/state.json
+          else
+            echo "Catálogo ainda não gerado: o app usará apenas as bases públicas."
+          fi
+      - name: E2E contra o build final
+        run: |
+          npx playwright install --with-deps chromium
+          npx playwright test --project=iphone --project=desktop --reporter=line
+        env:
+          CI: 'true'
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

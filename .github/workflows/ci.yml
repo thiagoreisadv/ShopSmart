@@ -1,0 +1,43 @@
+name: CI
+
+on:
+  push:
+    branches: ['**']
+    paths-ignore: ['**.md', 'legacy/**']
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: ESLint
+        run: npm run lint
+      - name: Tipos (TypeScript)
+        run: npm run typecheck
+      - name: Testes unitários, de integração e do robô de catálogo
+        run: npm test
+      - name: Build
+        run: npm run build
+      - name: Instalar Chromium (Playwright)
+        run: npx playwright install --with-deps chromium
+      - name: E2E (iPhone, Android, tablet e desktop)
+        run: npx playwright test --reporter=line
+        env:
+          CI: 'true'
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 7
