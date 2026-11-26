@@ -9,7 +9,7 @@ test.describe('navegação e responsividade', () => {
     await openApp(page)
     await expect(page.getByRole('heading', { name: 'ShopSmart' }).first()).toBeVisible()
     await expect(page.getByRole('button', { name: 'Iniciar compra' })).toBeVisible()
-    for (const [tab, heading] of [['Listas', 'Listas'], ['Compra', 'Compra'], ['Finanças', 'Finanças'], ['Mais', 'Mais'], ['Início', 'ShopSmart']] as const) {
+    for (const [tab, heading] of [['Listas', 'Listas'], ['Comprar', 'Comprar'], ['Gastos', 'Gastos'], ['Início', 'ShopSmart']] as const) {
       await go(page, tab)
       await expect(page.getByRole('heading', { name: heading, exact: true }).first()).toBeVisible()
     }
@@ -27,8 +27,9 @@ test.describe('navegação e responsividade', () => {
       await expect(page.locator('.sidebar')).toBeHidden()
       // Compra em destaque
       await expect(page.locator('.nav-cta-btn')).toBeVisible()
+      await expect(page.locator('.bottom-nav li')).toHaveCount(4)
     }
-    for (const h of ['#/', '#/listas', '#/compra', '#/financas', '#/mais', '#/mais/comparador', '#/mais/catalogo', '#/mais/precos', '#/mais/compras', '#/mais/unidade', '#/mais/combustivel', '#/mais/config', '#/mais/backup']) {
+    for (const h of ['#/', '#/listas', '#/listas/comparar', '#/comprar', '#/gastos', '#/gastos/compras', '#/catalogo', '#/ferramentas/unidade', '#/ferramentas/combustivel', '#/config']) {
       await page.goto('./' + h)
       await page.waitForTimeout(150)
       const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)
@@ -36,16 +37,9 @@ test.describe('navegação e responsividade', () => {
     }
   })
 
-  test('menu Mais lista todas as ferramentas exigidas', async ({ page }) => {
-    await openApp(page, '#/mais')
-    for (const t of ['Comparador de supermercados', 'Catálogo de produtos', 'Histórico de preços', 'Histórico de compras', 'Calculadora de preço por unidade', 'Calculadora de combustível', 'Configurações', 'Backup e restauração']) {
-      await expect(page.getByRole('button', { name: new RegExp(t) })).toBeVisible()
-    }
-  })
-
   test('modo claro/escuro alterna e persiste na chave shopsmart_theme', async ({ page }) => {
     await page.emulateMedia({ colorScheme: 'light' })
-    await openApp(page, '#/mais/config')
+    await openApp(page, '#/config')
     await page.getByRole('tab', { name: 'Escuro' }).click()
     await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark')
     expect(await page.evaluate(() => localStorage.getItem('shopsmart_theme'))).toBe('"dark"')

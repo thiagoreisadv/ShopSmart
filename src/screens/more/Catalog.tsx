@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Page } from '@/components/Page'
+import PriceHistoryPanel from '@/components/PriceHistoryPanel'
 import { Badge, Banner, Button, Card, EmptyState, IconButton, SelectInput, TextInput } from '@/components/ui'
 import { Icon } from '@/components/Icon'
 import { Sheet, ConfirmDialog } from '@/components/Sheet'
@@ -38,7 +39,7 @@ export default function Catalog() {
   }, [])
 
   return (
-    <Page title="Catálogo de produtos" subtitle={`${products.length} no seu aparelho`} backTo="/mais" actions={<IconButton icon="Plus" label="Cadastrar produto" onClick={() => setAdd(true)} />}>
+    <Page title="Catálogo de produtos" subtitle={`${products.length} no seu aparelho`} backTo="/" actions={<IconButton icon="Plus" label="Cadastrar produto" onClick={() => setAdd(true)} />}>
       <div className="input-affix"><span className="affix"><Icon name="Search" size={18} /></span><input className="input" type="search" placeholder="Nome, marca, categoria ou código" value={q} onChange={(e) => setQ(e.target.value)} aria-label="Buscar produtos" /></div>
       {results.length === 0 ? (
         <EmptyState icon="Package" title={q ? 'Nada encontrado' : 'Catálogo vazio'} text={q ? 'Tente outro termo ou cadastre o produto.' : 'Os produtos que você comprar, escanear ou fotografar são salvos aqui e reconhecidos nas próximas vezes — até sem internet.'} action={<Button onClick={() => setAdd(true)} icon="Plus">Cadastrar produto</Button>} />
@@ -87,12 +88,13 @@ function EditSheet({ product, onClose, onDelete }: { product: Product | null; on
   const [cat, setCat] = useState('geral')
   useEffect(() => { if (product) { setName(product.name); setBrand(product.brand ?? ''); setCat(product.category) } }, [product])
   return (
-    <Sheet open={!!product} onClose={onClose} title="Editar produto" footer={<><Button variant="ghost" icon="Trash2" onClick={() => product && onDelete(product)}>Excluir</Button><Button variant="primary" className="grow" onClick={() => { if (product && name.trim()) { editProduct(product.id, { name, brand, category: cat }); toast('Produto atualizado. Sua correção é preservada.', 'success'); onClose() } }}>Salvar</Button></>}>
+    <Sheet open={!!product} onClose={onClose} title="Produto" footer={<><Button variant="ghost" icon="Trash2" onClick={() => product && onDelete(product)}>Excluir</Button><Button variant="primary" className="grow" onClick={() => { if (product && name.trim()) { editProduct(product.id, { name, brand, category: cat }); toast('Produto atualizado. Sua correção é preservada.', 'success'); onClose() } }}>Salvar</Button></>}>
       {product && (
         <div className="stack">
           <TextInput label="Nome" value={name} onChange={(e) => setName(e.target.value)} />
           <TextInput label="Marca" value={brand} onChange={(e) => setBrand(e.target.value)} />
           <SelectInput label="Categoria" value={cat} onChange={(e) => setCat(e.target.value)}>{CATEGORIES.map((c) => <option key={c.id} value={c.id}>{c.label}</option>)}</SelectInput>
+          <div><h3 className="section-title" style={{ margin: '0 0 8px' }}>Histórico de preços</h3><PriceHistoryPanel productId={product.id} /></div>
           <Banner tone="info">Suas correções de nome, marca e categoria nunca são sobrescritas por atualizações automáticas do catálogo.</Banner>
           <div className="small muted stack-s">
             {product.barcode && <div>Código de barras: <b className="num">{product.barcode}</b></div>}

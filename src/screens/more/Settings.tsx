@@ -6,13 +6,14 @@ import { updateSettings } from '@/store/actions'
 import { useTheme, type ThemeChoice } from '@/hooks/useTheme'
 import { usePwa, applyUpdate } from '@/hooks/usePwa'
 import { Button } from '@/components/ui'
+import BackupSection from './Backup'
 
 export default function Settings() {
   const s = useAppState((st) => st.settings)
   const { choice, setChoice } = useTheme()
   const pwa = usePwa()
   return (
-    <Page title="Configurações" backTo="/mais">
+    <Page title="Configurações" backTo="/" noGear>
       <Card className="stack">
         <h2 style={{ fontSize: 16 }}>Aparência</h2>
         <Segmented<ThemeChoice> value={choice} onChange={setChoice} label="Tema" options={[{ value: 'system', label: 'Sistema' }, { value: 'light', label: 'Claro' }, { value: 'dark', label: 'Escuro' }]} />
@@ -26,6 +27,10 @@ export default function Settings() {
         <TextInput label="Cidade padrão" value={s.defaultCity} onChange={(e) => updateSettings({ defaultCity: e.target.value })} placeholder="Ex.: Loanda" />
         <div className="row between"><div><div className="bold small">Consultar bases públicas</div><div className="xs muted">Open Food Facts, Open Beauty Facts e Open Products Facts ao ler um código novo. O código lido é enviado a esses serviços.</div></div><Switch checked={s.catalogLookupExternal} onChange={(v) => updateSettings({ catalogLookupExternal: v })} label="Consultar bases públicas" /></div>
       </Card>
+      <section className="stack" id="backup" aria-label="Backup e restauração">
+        <h2 style={{ fontSize: 16 }}>Backup e restauração</h2>
+        <BackupSection />
+      </section>
       <Card className="stack">
         <h2 style={{ fontSize: 16 }}>Privacidade</h2>
         <p className="small muted">Seus dados (listas, compras, preços, orçamentos) ficam somente neste aparelho. Fotos de etiquetas são lidas no próprio aparelho e descartadas logo depois — nada é enviado nem guardado.</p>

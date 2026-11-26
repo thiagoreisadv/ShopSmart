@@ -1,28 +1,23 @@
 import { Suspense, lazy, useEffect, useMemo, useRef, useState } from 'react'
 import { AnimatePresence, motion } from 'motion/react'
 import { Page } from '@/components/Page'
-import { Button, Banner, Card, EmptyState, Field, IconButton, MoneyInput, Progress, SelectInput, TextArea, TextInput, Badge } from '@/components/ui'
+import { Button, EmptyState, Field, MoneyInput, Progress, SelectInput, TextArea, TextInput } from '@/components/ui'
 import { Icon } from '@/components/Icon'
-import { Sheet, ConfirmDialog } from '@/components/Sheet'
+import { Sheet, ConfirmDialog, ActionSheet, type ActionItem } from '@/components/Sheet'
 import { Money } from '@/components/AnimatedNumber'
 import { HBars } from '@/components/Charts'
 import ItemSheet, { type ItemDraft } from '@/components/ItemSheet'
 import { useAppState, selectActivePurchase, getState } from '@/store/store'
 import { addCartItem, budgetToast, cancelPurchase, changeQty, finalizePurchase, removeCartItem, restoreCartItem, setCheckoutDiscount, setPurchaseBudget, startPurchase, updateCartItem, type NewCartItem } from '@/store/actions'
-import { toast, haptic, takePendingStartList } from '@/store/ui'
+import { toast, takePendingStartList } from '@/store/ui'
 import { budgetStatus, cartTotals, lineTotal, spendByCategory } from '@/domain/cart'
 import { formatBRL, formatDecimal, parseMoney } from '@/lib/money'
-import { formatQty } from '@/lib/units'
-import { categoryById } from '@/domain/categories'
+import { formatQty, formatSizeText } from '@/lib/units'
 import { navigate } from '@/router'
 import { formatDateTime } from '@/lib/dates'
-import { lookupBarcode, type FoundProduct, type LookupOutcome } from '@/services/lookup'
-import { evaluatePrice, recordsFor } from '@/domain/prices'
 import type { CartItem, PaymentMethod, Purchase } from '@/domain/types'
-import type { LabelResult } from '@/components/LabelCapture'
 
-const BarcodeScanner = lazy(() => import('@/components/BarcodeScanner'))
-const LabelCapture = lazy(() => import('@/components/LabelCapture'))
+const SmartCapture = lazy(() => import('@/components/SmartCapture'))
 
 const PAYMENTS: { value: PaymentMethod | ''; label: string }[] = [
   { value: '', label: 'Não informar' },
@@ -102,44 +97,24 @@ function StartSheet({ open, onClose, presetList }: { open: boolean; onClose: () 
 function Idle({ autoOpen }: { autoOpen?: boolean }) {
   const [preset] = useState(() => takePendingStartList() ?? undefined)
   const [open, setOpen] = useState(!!preset || !!autoOpen)
-  const supermarkets = useAppState((s) => s.supermarkets)
   return (
-    <Page title="Compra" subtitle="Registre os preços enquanto compra">
-      <div className="hero">
-        <div className="label">Modo compra inteligente</div>
-        <div style={{ fontSize: 22, fontWeight: 700, margin: '4px 0 10px', letterSpacing: '-0.01em' }}>Acompanhe o carrinho em tempo real</div>
-        <p style={{ opacity: 0.9, fontSize: 14, marginBottom: 14 }}>Fotografe etiquetas, leia códigos de barras ou digite. O total, o orçamento e o histórico de preços se atualizam a cada item.</p>
-        <button className="btn lg" style={{ background: '#fff', color: '#064e3b', borderColor: '#fff', width: '100%' }} onClick={() => setOpen(true)}>
-          <Icon name="ShoppingCart" /> Iniciar compra
-        </button>
+    <Page title="Comprar" subtitle="Acompanhe o carrinho em tempo real">
+      <div className="stack" style={{ alignItems: 'stretch', paddingTop: 24 }}>
+        <EmptyState icon="ScanBarcode" title="Pronto para comprar?" text="Escaneie o código de barras ou a etiqueta de cada produto. O total e o orçamento se atualizam na hora." />
+        <Button variant="primary" size="lg" block icon="ShoppingCart" onClick={() => setOpen(true)}>Iniciar compra</Button>
       </div>
-      <div className="grid-2">
-        <Card tight><div className="row-s"><span className="avatar primary"><Icon name="Camera" /></span><span className="small"><b>Etiqueta</b><br /><span className="muted">Leitura de preço por foto</span></span></div></Card>
-        <Card tight><div className="row-s"><span className="avatar primary"><Icon name="ScanBarcode" /></span><span className="small"><b>Código de barras</b><br /><span className="muted">Identifica o produto</span></span></div></Card>
-      </div>
-      {supermarkets.length === 0 && <Banner tone="info">Você ainda não cadastrou supermercados. Ao iniciar a compra, informe o nome e a cidade — eles ficam salvos.</Banner>}
       <StartSheet open={open} onClose={() => setOpen(false)} presetList={preset} />
     </Page>
   )
 }
 
 /* ============================ Item do carrinho ============================ */
-function CartRow({ item, purchase, onEdit }: { item: CartItem; purchase: Purchase; onEdit: (i: CartItem) => void }) {
-  const prices = useAppState((s) => s.prices)
-  const insight = useMemo(() => {
-    if (!item.productId) return null
-    const h = recordsFor(prices, item.productId, item.priceUnit)
-    if (!h.length) return null
-    const total = lineTotal(item)
-    const eff = item.qtyMilli ? Math.round((total * 1000) / item.qtyMilli) : item.unitPriceCents
-    return evaluatePrice(h, eff, item.priceUnit)[0] ?? null
-  }, [prices, item])
+function CartRow({ item, onEdit }: { item: CartItem; onEdit: (i: CartItem) => void }) {
   const remove = () => {
     const r = removeCartItem(item.id)
     if (r) toast(`“${item.name}” removido`, 'info', { label: 'Desfazer', run: () => restoreCartItem(r.item, r.index) })
   }
   const total = lineTotal(item)
-  void purchase
   return (
     <div className="swipe-wrap">
       <div className="swipe-bg" aria-hidden="true"><Icon name="Trash2" /></div>
@@ -148,48 +123,34 @@ function CartRow({ item, purchase, onEdit }: { item: CartItem; purchase: Purchas
         dragConstraints={{ left: 0, right: 0 }}
         dragElastic={{ left: 0.5, right: 0 }}
         onDragEnd={(_, info) => info.offset.x < -110 && remove()}
-        layout
-        initial={{ opacity: 0, y: -10 }}
-        animate={{ opacity: 1, y: 0 }}
-        exit={{ opacity: 0, x: -60, height: 0 }}
-        transition={{ type: 'spring', stiffness: 420, damping: 36 }}
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0, height: 0 }}
+        transition={{ duration: 0.16 }}
         style={{ background: 'var(--bg)', position: 'relative' }}
       >
         <div className="cart-item">
           <button className="list-btn" style={{ minWidth: 0 }} onClick={() => onEdit(item)} aria-label={`Editar ${item.name}`}>
             <div className="bold ellipsis">{item.name}</div>
             <div className="xs muted ellipsis">
-              {item.brand ? `${item.brand} · ` : ''}{categoryById(item.category).label} · {formatBRL(item.unitPriceCents)}/{item.priceUnit === 'l' ? 'L' : item.priceUnit}
+              {formatBRL(item.unitPriceCents)}/{item.priceUnit === 'l' ? 'L' : item.priceUnit}
+              {item.bundle ? ` · ${item.bundle.qty} por ${formatBRL(item.bundle.totalCents)}` : ''}
               {item.discountCents ? ` · −${formatBRL(item.discountCents)}` : ''}
-            </div>
-            <div className="row-s wrap" style={{ marginTop: 2 }}>
-              {item.bundle && <Badge tone="info">{item.bundle.qty} por {formatBRL(item.bundle.totalCents)}</Badge>}
-              {!item.priceConfirmed && <Badge tone="warn">preço não confirmado</Badge>}
-              {item.origin === 'ocr' && <Badge icon="Camera">etiqueta</Badge>}
-              {item.origin === 'barcode' && <Badge icon="ScanBarcode">código</Badge>}
+              {!item.priceConfirmed ? ' · preço não confirmado' : ''}
             </div>
           </button>
           <div className="right">
             <div className="bold num"><Money cents={total} /></div>
             {item.priceUnit === 'un' ? (
-              <div className="stepper" style={{ marginTop: 4 }}>
+              <div className="stepper sm" style={{ marginTop: 2 }}>
                 <button aria-label={`Diminuir ${item.name}`} onClick={() => (item.qtyMilli > 1000 ? changeQty(item.id, -1000) : remove())}><Icon name={item.qtyMilli > 1000 ? 'Minus' : 'Trash2'} /></button>
                 <span className="q num" aria-live="polite">{Math.round(item.qtyMilli / 1000)}</span>
                 <button aria-label={`Aumentar ${item.name}`} onClick={() => changeQty(item.id, 1000)}><Icon name="Plus" /></button>
               </div>
             ) : (
-              <div className="row-s" style={{ justifyContent: 'flex-end', marginTop: 4 }}>
-                <span className="small muted num">{formatQty(item.qtyMilli, item.priceUnit)}</span>
-                <IconButton size="sm" icon="Trash2" label={`Remover ${item.name}`} onClick={remove} />
-              </div>
+              <div className="xs muted num" style={{ marginTop: 2 }}>{formatQty(item.qtyMilli, item.priceUnit)}</div>
             )}
           </div>
-          {insight && (
-            <div className={`insight ${insight.tone}`} style={{ gridColumn: '1 / -1' }}>
-              <Icon name={insight.tone === 'good' ? 'TrendingDown' : 'TrendingUp'} />
-              <span>{insight.message} <span className="muted">(ref. {formatBRL(insight.reference.unitPriceCents)} em {new Date(insight.reference.date).toLocaleDateString('pt-BR')})</span></span>
-            </div>
-          )}
         </div>
       </motion.div>
     </div>
@@ -267,20 +228,16 @@ function Done({ purchase, onNew }: { purchase: Purchase; onNew: () => void }) {
   const diff = (purchase.paidCents ?? 0) - (purchase.estimatedCents ?? 0)
   return (
     <Page title="Compra finalizada">
-      <motion.div initial={{ scale: 0.92, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ type: 'spring', stiffness: 300, damping: 24 }}>
-        <Card>
-          <div className="stack" style={{ alignItems: 'center', textAlign: 'center' }}>
-            <motion.div className="check-burst" initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: 'spring', stiffness: 420, damping: 18, delay: 0.1 }}><Icon name="Check" /></motion.div>
-            <h2>Compra registrada</h2>
-            <div className="bold num" style={{ fontSize: 32 }}><Money cents={purchase.paidCents ?? 0} /></div>
-            <p className="muted small">{purchase.supermarketName}{purchase.city ? ` · ${purchase.city}` : ''} · {purchase.items.length} produtos</p>
-            {diff !== 0 && <Badge tone={diff > 0 ? 'warn' : 'good'}>{diff > 0 ? '+' : '−'}{formatBRL(Math.abs(diff))} em relação ao estimado</Badge>}
-            <p className="muted xs">Preços atualizados no histórico de cada produto.</p>
-          </div>
-        </Card>
-      </motion.div>
+      <div className="stack" style={{ alignItems: 'center', textAlign: 'center', paddingTop: 28 }}>
+        <motion.div className="check-burst" initial={{ scale: 0.4, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ type: 'spring', stiffness: 420, damping: 24 }}><Icon name="Check" /></motion.div>
+        <h2>Compra registrada</h2>
+        <div className="bold num" style={{ fontSize: 34 }}><Money cents={purchase.paidCents ?? 0} /></div>
+        <p className="muted small">{purchase.supermarketName}{purchase.city ? ` · ${purchase.city}` : ''} · {purchase.items.length} produtos</p>
+        {diff !== 0 && <p className="small" style={{ color: diff > 0 ? 'var(--warn-text)' : 'var(--primary-soft-text)' }}>{diff > 0 ? '+' : '−'}{formatBRL(Math.abs(diff))} em relação ao estimado</p>}
+        <p className="muted xs">Preços atualizados no histórico de cada produto.</p>
+      </div>
       <div className="grid-2">
-        <Button variant="outline" onClick={() => navigate('/financas')} icon="Wallet">Ver finanças</Button>
+        <Button variant="outline" onClick={() => navigate('/gastos')} icon="Wallet">Ver gastos</Button>
         <Button variant="primary" onClick={onNew} icon="ShoppingCart">Nova compra</Button>
       </div>
     </Page>
@@ -288,25 +245,19 @@ function Done({ purchase, onNew }: { purchase: Purchase; onNew: () => void }) {
 }
 
 /* ============================ Compra ativa ============================ */
-type LookupState = { status: 'loading' | 'done'; code: string; outcome?: LookupOutcome } | null
-
 function Active({ purchase, onDone }: { purchase: Purchase; onDone: (p: Purchase) => void }) {
   const listData = useAppState((s) => s.listData)
   const listName = useAppState((s) => s.lists.find((l) => l.id === purchase.listId)?.name ?? '')
-  const externalEnabled = useAppState((s) => s.settings.catalogLookupExternal)
-  const [scanner, setScanner] = useState(false)
-  const [ocr, setOcr] = useState<'new' | 'price' | null>(null)
-  const [lookup, setLookup] = useState<LookupState>(null)
+  const [camera, setCamera] = useState(false)
   const [draft, setDraft] = useState<ItemDraft | null>(null)
-  const [sourceNote, setSourceNote] = useState<string | undefined>()
   const [itemOpen, setItemOpen] = useState(false)
   const [editing, setEditing] = useState<CartItem | null>(null)
   const [finalize, setFinalize] = useState(false)
   const [cancelAsk, setCancelAsk] = useState(false)
   const [budgetOpen, setBudgetOpen] = useState(false)
+  const [menu, setMenu] = useState(false)
   const [catOpen, setCatOpen] = useState(false)
   const [listOpen, setListOpen] = useState(false)
-  const abortRef = useRef<AbortController | null>(null)
 
   const totals = cartTotals(purchase.items, purchase.checkoutDiscountCents)
   const bs = budgetStatus(totals.totalCents, purchase.budgetCents)
@@ -315,74 +266,32 @@ function Active({ purchase, onDone }: { purchase: Purchase; onDone: (p: Purchase
   const list = purchase.listId ? listData[purchase.listId] : undefined
   const pendingList = list ? list.products.filter((p) => !p.inCart) : []
 
-  const openDraft = (d: ItemDraft, note?: string) => {
+  const openManual = (d: ItemDraft = { origin: 'manual' }) => {
+    setEditing(null)
     setDraft(d)
-    setSourceNote(note)
     setItemOpen(true)
   }
 
-  const onScan = async (barcode: string) => {
-    setScanner(false)
-    abortRef.current?.abort()
-    const ctrl = new AbortController()
-    abortRef.current = ctrl
-    setLookup({ status: 'loading', code: barcode })
-    try {
-      const out = await lookupBarcode(barcode, { personal: getState().products, externalEnabled }, ctrl.signal)
-      if (ctrl.signal.aborted) return
-      setLookup(null)
-      const f: FoundProduct | null = out.found
-      if (f) {
-        const sizeTxt = f.size ? (f.size.unit === 'un' ? `${f.size.milli / 1000} un` : f.size.milli >= 1000 ? `${f.size.milli / 1000} ${f.size.unit === 'kg' ? 'kg' : 'L'}` : `${f.size.milli} ${f.size.unit === 'kg' ? 'g' : 'mL'}`) : undefined
-        const src = f.source === 'personal' ? 'Seu catálogo' : f.source === 'catalog' ? 'Catálogo ShopSmart' : f.source === 'off' ? 'Open Food Facts' : f.source === 'obf' ? 'Open Beauty Facts' : f.source === 'opf' ? 'Open Products Facts' : undefined
-        openDraft({ name: f.name, brand: f.brand, barcode: f.barcode, category: f.category, sizeText: sizeTxt, origin: 'barcode', productSource: f.source }, src)
-        haptic('success')
-      } else {
-        openDraft({ barcode: out.barcode ?? barcode, origin: 'barcode', productSource: 'manual' }, 'Produto novo')
-        toast(out.offline ? 'Sem internet: cadastre o produto manualmente.' : out.errors.length ? 'Não consegui consultar as bases agora. Cadastre manualmente.' : 'Produto não encontrado. Cadastre manualmente — ele será reconhecido nas próximas leituras.', 'info')
-      }
-    } catch {
-      if (!ctrl.signal.aborted) {
-        setLookup(null)
-        openDraft({ barcode, origin: 'barcode' }, 'Produto novo')
-      }
-    }
-  }
-
-  const onLabel = (r: LabelResult) => {
-    const target = ocr
-    setOcr(null)
-    if (target === 'price' && draft) {
-      setDraft({ ...draft, priceCents: r.priceCents, priceUnit: r.priceUnit, bundle: r.bundle, priceConfirmed: true })
-      setItemOpen(true)
-      return
-    }
-    openDraft({ name: r.name, brand: r.brand, sizeText: r.sizeText, priceCents: r.priceCents, priceUnit: r.priceUnit, bundle: r.bundle, origin: 'ocr', priceConfirmed: true, productSource: 'ocr' })
+  const handleAdd = (n: NewCartItem) => {
+    const r = addCartItem(n)
+    if (!r) return
+    toast(r.merged ? `+1 ${r.item.name}` : `${r.item.name} adicionado`, 'success')
+    if (r.alert) budgetToast(r.alert)
   }
 
   const submitItem = (n: NewCartItem) => {
     if (editing) {
       updateCartItem(editing.id, {
-        name: n.name,
-        brand: n.brand,
-        category: n.category ?? editing.category,
-        qtyMilli: n.qtyMilli,
-        priceUnit: n.priceUnit,
-        unitPriceCents: n.unitPriceCents,
-        discountCents: n.discountCents ?? 0,
-        bundle: n.bundle,
-        priceConfirmed: n.priceConfirmed ?? true,
+        name: n.name, brand: n.brand, category: n.category ?? editing.category, qtyMilli: n.qtyMilli, priceUnit: n.priceUnit,
+        unitPriceCents: n.unitPriceCents, discountCents: n.discountCents ?? 0, bundle: n.bundle, priceConfirmed: n.priceConfirmed ?? true,
       })
       setEditing(null)
       setItemOpen(false)
       toast('Item atualizado', 'success')
       return
     }
-    const r = addCartItem(n)
     setItemOpen(false)
-    if (!r) return
-    toast(r.merged ? `Quantidade de “${r.item.name}” atualizada` : `“${r.item.name}” adicionado`, 'success')
-    if (r.alert) budgetToast(r.alert)
+    handleAdd(n)
   }
 
   const editDraft = (i: CartItem): ItemDraft => ({
@@ -390,131 +299,93 @@ function Active({ purchase, onDone }: { purchase: Purchase; onDone: (p: Purchase
     bundle: i.bundle, discountCents: i.discountCents, origin: i.origin, priceConfirmed: i.priceConfirmed,
   })
 
-  useEffect(() => () => abortRef.current?.abort(), [])
+  const actions: ActionItem[] = [
+    { label: 'Orçamento e desconto no caixa', icon: 'Target', detail: purchase.budgetCents ? `Orçamento ${formatBRL(purchase.budgetCents)}` : 'Sem orçamento definido', run: () => setBudgetOpen(true) },
+    { label: 'Gastos por categoria', icon: 'ChartColumn', run: () => setCatOpen(true) },
+    ...(list ? [{ label: `Lista: ${listName}`, icon: 'ListChecks' as const, detail: pendingList.length ? `${pendingList.length} pendentes` : 'tudo no carrinho', run: () => setListOpen(true) }] : []),
+    { label: 'Cancelar compra', icon: 'X', danger: true, run: () => setCancelAsk(true) },
+  ]
 
   return (
     <>
-      <div className="content stack with-dock" style={{ paddingTop: 0 }}>
+      <div className="content stack with-dock" style={{ paddingTop: 0, gap: 8 }}>
         <div className="cart-bar" role="region" aria-label="Resumo do carrinho">
           <div className="row between">
-            <div style={{ minWidth: 0 }}>
-              <div className="xs" style={{ opacity: 0.85 }}>{purchase.supermarketName}{purchase.city ? ` · ${purchase.city}` : ''}</div>
+            <div className="xs ellipsis" style={{ opacity: 0.85 }}>{purchase.supermarketName}{purchase.city ? ` · ${purchase.city}` : ''}</div>
+            <button className="icon-btn sm" style={{ color: '#fff' }} onClick={() => setMenu(true)} aria-label="Mais opções da compra"><Icon name="Ellipsis" /></button>
+          </div>
+          <div className="row between" style={{ alignItems: 'flex-end' }}>
+            <div>
               <div className="total"><Money cents={totals.totalCents} /></div>
-              <div className="xs" style={{ opacity: 0.85 }}>estimado no caixa{totals.checkoutDiscountCents ? ` (−${formatBRL(totals.checkoutDiscountCents)} desconto)` : ''}</div>
+              <div className="xs" style={{ opacity: 0.85 }}>{totals.lines} {totals.lines === 1 ? 'produto' : 'produtos'} · {totals.units} un.</div>
             </div>
-            <div className="row-s">
-              <button className="icon-btn" style={{ color: '#fff' }} onClick={() => setBudgetOpen(true)} aria-label="Definir orçamento"><Icon name="Target" /></button>
-              <button className="icon-btn" style={{ color: '#fff' }} onClick={() => setCancelAsk(true)} aria-label="Cancelar compra"><Icon name="X" /></button>
-            </div>
-          </div>
-          <div className="meta">
-            <div><span>Produtos</span><b className="num">{totals.lines} <span style={{ fontWeight: 400, opacity: 0.8 }}>({totals.units} un.)</span></b></div>
-            <div><span>{bs.level === 'over' ? 'Excedido' : 'Disponível'}</span><b className="num">{purchase.budgetCents ? formatBRL(Math.abs(bs.remainingCents)) : '—'}</b></div>
-            <div><span>Orçamento usado</span><b className="num">{purchase.budgetCents ? `${Math.round(bs.usedPct)}%` : '—'}</b></div>
-          </div>
-          {purchase.budgetCents > 0 ? <Progress pct={bs.usedPct} tone={tone} /> : <button className="xs" style={{ color: '#fff', textDecoration: 'underline', marginTop: 8 }} onClick={() => setBudgetOpen(true)}>Definir orçamento</button>}
-        </div>
-
-        <AnimatePresence initial={false}>
-          {bs.level !== 'none' && bs.level !== 'ok' && (
-            <motion.div key={bs.level} initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }}>
-              <Banner tone={bs.level === 'over' ? 'danger' : 'warn'}>
-                {bs.level === 'over' ? <>Orçamento ultrapassado em <b className="num">{formatBRL(-bs.remainingCents)}</b>. Você pode continuar comprando.</> : bs.level === 'w90' ? <>90% do orçamento usado. Restam <b className="num">{formatBRL(bs.remainingCents)}</b>.</> : <>80% do orçamento usado. Restam <b className="num">{formatBRL(bs.remainingCents)}</b>.</>}
-              </Banner>
-            </motion.div>
-          )}
-        </AnimatePresence>
-
-        <div className="capture-dock">
-          <div className="inner" role="group" aria-label="Adicionar produto">
-            <button className="capture-btn main" onClick={() => setOcr('new')}><Icon name="Camera" />Etiqueta</button>
-            <button className="capture-btn" onClick={() => setScanner(true)}><Icon name="ScanBarcode" />Código</button>
-            <button className="capture-btn" onClick={() => { setEditing(null); openDraft({ origin: 'manual' }) }}><Icon name="Plus" />Manual</button>
-          </div>
-        </div>
-
-        {list && (
-          <Card tight>
-            <button className="row between list-btn" onClick={() => setListOpen((o) => !o)} aria-expanded={listOpen}>
-              <span className="row-s"><Icon name="ListChecks" size={18} /> <b className="small">Lista: {listName}</b></span>
-              <span className="row-s"><Badge tone={pendingList.length ? 'warn' : 'good'}>{pendingList.length ? `${pendingList.length} pendentes` : 'tudo no carrinho'}</Badge><Icon name={listOpen ? 'ChevronDown' : 'ChevronRight'} size={16} /></span>
-            </button>
-            <AnimatePresence initial={false}>
-              {listOpen && pendingList.length > 0 && (
-                <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} style={{ overflow: 'hidden' }}>
-                  <div className="row-s wrap" style={{ paddingTop: 10 }}>
-                    {pendingList.map((p) => (
-                      <button key={p.id} className="chip" onClick={() => { setEditing(null); openDraft({ name: p.name, category: p.category, barcode: p.barcode, origin: 'list', qtyMilli: Math.max(1, p.quantity) * 1000 }) }}>
-                        <Icon name="Plus" /> {p.name}{p.quantity > 1 ? ` ×${p.quantity}` : ''}
-                      </button>
-                    ))}
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </Card>
-        )}
-
-        <div className="two-col">
-          <div>
-            {purchase.items.length === 0 ? (
-              <EmptyState icon="ShoppingBasket" title="Carrinho vazio" text="Fotografe a etiqueta, leia o código de barras ou adicione manualmente o primeiro produto." />
+            {purchase.budgetCents > 0 ? (
+              <button className="right" style={{ color: '#fff' }} onClick={() => setBudgetOpen(true)} aria-label="Orçamento">
+                <div className="xs" style={{ opacity: 0.85 }}>{bs.level === 'over' ? 'Excedido' : 'Restante'}</div>
+                <div className="bold num" style={{ fontSize: 18 }}>{formatBRL(Math.abs(bs.remainingCents))}</div>
+              </button>
             ) : (
-              <div>
-                <div className="row between" style={{ margin: '4px 2px 4px' }}>
-                  <h2 className="section-title" style={{ margin: 0 }}>No carrinho</h2>
-                  <span className="xs muted">Deslize para a esquerda para remover</span>
-                </div>
-                <AnimatePresence initial={false}>
-                  {purchase.items.map((it) => <CartRow key={it.id} item={it} purchase={purchase} onEdit={(i) => { setEditing(i); setDraft(editDraft(i)); setSourceNote(undefined); setItemOpen(true) }} />)}
-                </AnimatePresence>
-              </div>
+              <button className="xs" style={{ color: '#fff', textDecoration: 'underline' }} onClick={() => setBudgetOpen(true)}>Definir orçamento</button>
             )}
           </div>
-          <div className="stack">
-            {cats.length > 0 && (
-              <Card tight>
-                <button className="row between list-btn" onClick={() => setCatOpen((o) => !o)} aria-expanded={catOpen}>
-                  <b>Gastos por categoria</b>
-                  <motion.span animate={{ rotate: catOpen ? 180 : 0 }}><Icon name="ChevronDown" size={18} /></motion.span>
-                </button>
-                <AnimatePresence initial={false}>
-                  {catOpen && (
-                    <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} style={{ overflow: 'hidden' }}>
-                      <div style={{ paddingTop: 12 }}><HBars items={cats} total={totals.subtotalCents} /></div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </Card>
-            )}
-            <Button variant="primary" size="lg" block icon="Check" disabled={purchase.items.length === 0} onClick={() => setFinalize(true)}>Finalizar compra</Button>
+          {purchase.budgetCents > 0 && <Progress pct={bs.usedPct} tone={tone} />}
+          {(bs.level === 'w80' || bs.level === 'w90' || bs.level === 'over') && (
+            <div className="xs" role="status" style={{ marginTop: 6 }}>
+              {bs.level === 'over' ? <>Orçamento ultrapassado em <b className="num">{formatBRL(-bs.remainingCents)}</b>. Você pode continuar comprando.</> : <>{bs.level === 'w90' ? '90%' : '80%'} do orçamento usado.</>}
+            </div>
+          )}
+        </div>
+
+        {purchase.items.length === 0 ? (
+          <EmptyState icon="ScanBarcode" title="Carrinho vazio" text="Toque em Escanear e aponte para o código de barras ou para a etiqueta de preço." />
+        ) : (
+          <div>
+            <AnimatePresence initial={false}>
+              {purchase.items.map((it) => <CartRow key={it.id} item={it} onEdit={(i) => { setEditing(i); setDraft(editDraft(i)); setItemOpen(true) }} />)}
+            </AnimatePresence>
           </div>
+        )}
+      </div>
+
+      <div className="capture-dock">
+        <div className="inner" role="group" aria-label="Adicionar produto">
+          <button className="dock-side" onClick={() => openManual()} aria-label="Digitar produto"><Icon name="Pencil" /><span>Digitar</span></button>
+          <button className="dock-main" onClick={() => setCamera(true)} aria-label="Escanear produto"><Icon name="ScanBarcode" size={24} /> Escanear</button>
+          <button className="dock-side" disabled={purchase.items.length === 0} onClick={() => setFinalize(true)} aria-label="Finalizar compra"><Icon name="Check" /><span>Finalizar</span></button>
         </div>
       </div>
 
-      <Suspense fallback={null}>
-        {scanner && <BarcodeScanner onResult={(r) => void onScan(r.barcode)} onClose={() => setScanner(false)} />}
-        {ocr && <LabelCapture onResult={onLabel} onClose={() => setOcr(null)} />}
-      </Suspense>
+      {camera && (
+        <Suspense fallback={null}>
+          <SmartCapture
+            mode="cart"
+            onAdd={handleAdd}
+            onDetails={(d) => {
+              setCamera(false)
+              openManual({ name: d.name, brand: d.brand, barcode: d.barcode, category: d.category, priceCents: d.priceCents || undefined, priceUnit: d.priceUnit, qtyMilli: d.priceUnit === 'un' ? d.qty * 1000 : Math.round(d.qty * 1000), bundle: d.bundle, sizeText: d.size ? formatSizeText(d.size) : undefined, origin: d.origin, priceConfirmed: d.priceCents > 0, productSource: d.origin === 'ocr' ? 'ocr' : 'barcode' })
+            }}
+            onClose={() => setCamera(false)}
+          />
+        </Suspense>
+      )}
 
-      <Sheet open={!!lookup} onClose={() => { abortRef.current?.abort(); setLookup(null) }} title="Identificando produto">
-        <div className="stack" style={{ alignItems: 'center', padding: '16px 0' }} aria-busy="true">
-          <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1, ease: 'linear' }}><Icon name="LoaderCircle" size={32} /></motion.div>
-          <p className="small muted">Código <b className="num">{lookup?.code}</b></p>
-          <p className="small muted">Consultando seu catálogo, o catálogo ShopSmart e bases públicas…</p>
-          <Button variant="ghost" onClick={() => { abortRef.current?.abort(); const c = lookup?.code; setLookup(null); if (c) openDraft({ barcode: c, origin: 'barcode' }, 'Produto novo') }}>Cadastrar manualmente</Button>
-        </div>
+      <ActionSheet open={menu} onClose={() => setMenu(false)} title="Compra" actions={actions} />
+      <Sheet open={catOpen} onClose={() => setCatOpen(false)} title="Gastos por categoria">
+        {cats.length ? <HBars items={cats} total={totals.subtotalCents} /> : <p className="muted small">Adicione produtos para ver os gastos por categoria.</p>}
+      </Sheet>
+      <Sheet open={listOpen} onClose={() => setListOpen(false)} title={`Lista: ${listName}`}>
+        {pendingList.length === 0 ? <p className="muted small">Todos os itens da lista já estão no carrinho.</p> : (
+          <div className="list">
+            {pendingList.map((p) => (
+              <button key={p.id} className="list-item list-btn" onClick={() => { setListOpen(false); openManual({ name: p.name, category: p.category, barcode: p.barcode, origin: 'list', qtyMilli: Math.max(1, p.quantity) * 1000 }) }}>
+                <span className="grow">{p.name}{p.quantity > 1 ? ` ×${p.quantity}` : ''}</span><Icon name="Plus" size={18} />
+              </button>
+            ))}
+          </div>
+        )}
       </Sheet>
 
-      <ItemSheet
-        open={itemOpen}
-        onClose={() => { setItemOpen(false); setEditing(null) }}
-        draft={draft}
-        mode={editing ? 'edit' : 'add'}
-        onSubmit={submitItem}
-        sourceNote={sourceNote}
-        onScanPrice={editing ? undefined : () => { setItemOpen(false); setOcr('price') }}
-      />
+      <ItemSheet open={itemOpen} onClose={() => { setItemOpen(false); setEditing(null) }} draft={draft} mode={editing ? 'edit' : 'add'} onSubmit={submitItem} onRemove={editing ? () => { const it = editing; setItemOpen(false); setEditing(null); const r = removeCartItem(it.id); if (r) toast(`“${it.name}” removido`, 'info', { label: 'Desfazer', run: () => restoreCartItem(r.item, r.index) }) } : undefined} />
       <FinalizeSheet purchase={purchase} open={finalize} onClose={() => setFinalize(false)} onDone={(p) => { setFinalize(false); onDone(p) }} />
       <BudgetSheet open={budgetOpen} onClose={() => setBudgetOpen(false)} purchase={purchase} />
       <ConfirmDialog

@@ -107,3 +107,35 @@ export function ConfirmDialog({
     document.body,
   )
 }
+
+export interface ActionItem {
+  label: string
+  icon?: import('./Icon').IconName
+  danger?: boolean
+  detail?: string
+  run: () => void
+}
+
+/** Menu contextual de ações secundárias, em bottom sheet (alcançável com o polegar). */
+export function ActionSheet({ open, onClose, title, actions }: { open: boolean; onClose: () => void; title: string; actions: ActionItem[] }) {
+  return (
+    <Sheet open={open} onClose={onClose} title={title}>
+      <div className="list" style={{ margin: '0 -4px' }}>
+        {actions.map((a) => (
+          <button
+            key={a.label}
+            className="list-item list-btn"
+            style={a.danger ? { color: 'var(--danger)' } : undefined}
+            onClick={() => {
+              onClose()
+              setTimeout(a.run, 60)
+            }}
+          >
+            {a.icon && <Icon name={a.icon} size={20} />}
+            <span className="grow">{a.label}{a.detail && <span className="xs muted" style={{ display: 'block' }}>{a.detail}</span>}</span>
+          </button>
+        ))}
+      </div>
+    </Sheet>
+  )
+}

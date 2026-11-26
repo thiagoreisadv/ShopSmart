@@ -1,6 +1,6 @@
 import { Suspense, lazy, useEffect, useRef } from 'react'
 import { AnimatePresence, MotionConfig, motion } from 'motion/react'
-import { useRoute, navigate, segments } from './router'
+import { useRoute, navigate, segments, canonicalRoute, tabOf } from './router'
 import { useAppState, selectActivePurchase } from './store/store'
 import { Icon, type IconName } from './components/Icon'
 import { Toasts } from './components/Toasts'
@@ -13,20 +13,17 @@ const Home = lazy(() => import('./screens/Home'))
 const Lists = lazy(() => import('./screens/Lists'))
 const Shop = lazy(() => import('./screens/Shop'))
 const Finance = lazy(() => import('./screens/Finance'))
-const More = lazy(() => import('./screens/More'))
+const Catalog = lazy(() => import('./screens/more/Catalog'))
+const UnitCalc = lazy(() => import('./screens/more/UnitCalc'))
+const FuelCalc = lazy(() => import('./screens/more/FuelCalc'))
+const Settings = lazy(() => import('./screens/more/Settings'))
 
 const TABS: { path: string; label: string; icon: IconName; cta?: boolean }[] = [
   { path: '/', label: 'Início', icon: 'House' },
   { path: '/listas', label: 'Listas', icon: 'ListChecks' },
-  { path: '/compra', label: 'Compra', icon: 'ShoppingCart', cta: true },
-  { path: '/financas', label: 'Finanças', icon: 'Wallet' },
-  { path: '/mais', label: 'Mais', icon: 'Ellipsis' },
+  { path: '/comprar', label: 'Comprar', icon: 'ScanBarcode', cta: true },
+  { path: '/gastos', label: 'Gastos', icon: 'Wallet' },
 ]
-
-function tabOf(route: string): string {
-  const s = segments(route)[0]
-  return s ? '/' + s : '/'
-}
 
 function PageSkeleton() {
   return (
@@ -39,24 +36,24 @@ function PageSkeleton() {
   )
 }
 
-function Screen({ tab, route }: { tab: string; route: string }) {
-  switch (tab) {
-    case '/listas':
-      return <Lists />
-    case '/compra':
-      return <Shop />
-    case '/financas':
-      return <Finance />
-    case '/mais':
-      return <More route={route} />
-    default:
-      return <Home />
+function Screen({ route }: { route: string }) {
+  const r = segments(route)
+  switch (r[0]) {
+    case 'listas': return <Lists />
+    case 'comprar': return <Shop />
+    case 'gastos': return <Finance />
+    case 'config': return <Settings />
+    case 'catalogo': return <Catalog />
+    case 'ferramentas': return r[1] === 'combustivel' ? <FuelCalc /> : <UnitCalc />
+    default: return <Home />
   }
 }
 
 export default function App() {
-  const route = useRoute()
+  const rawRoute = useRoute()
+  const route = canonicalRoute(rawRoute)
   const tab = tabOf(route)
+  const screenKey = segments(route).slice(0, 2).join('/') || 'home'
   const { toggle, resolved } = useTheme()
   const active = useAppState(selectActivePurchase)
   const storageError = useAppState((s) => s.storageError)
@@ -67,6 +64,9 @@ export default function App() {
   useEffect(() => {
     document.documentElement.dataset.motion = motionPref === 'on' ? 'off' : 'on'
   }, [motionPref])
+  useEffect(() => {
+    if (rawRoute !== route) navigate(route, { replace: true }) // links antigos (v2.0) → novas rotas
+  }, [rawRoute, route])
   useEffect(() => {
     window.scrollTo({ top: 0 })
   }, [route])
@@ -141,15 +141,15 @@ export default function App() {
             )}
             <AnimatePresence mode="wait" initial={false}>
               <motion.div
-                key={tab}
-                initial={{ opacity: 0, y: 8 }}
+                key={screenKey}
+                initial={{ opacity: 0, y: 6 }}
                 animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -4 }}
-                transition={{ duration: 0.16, ease: [0.22, 1, 0.36, 1] }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.12, ease: [0.22, 1, 0.36, 1] }}
                 style={{ flex: 1 }}
               >
                 <Suspense fallback={<PageSkeleton />}>
-                  <Screen tab={tab} route={route} />
+                  <Screen route={route} />
                 </Suspense>
               </motion.div>
             </AnimatePresence>

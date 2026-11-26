@@ -1,8 +1,22 @@
 import { type ReactNode, useEffect, useState } from 'react'
 import { IconButton } from './ui'
-import { back } from '@/router'
+import { back, navigate } from '@/router'
 
-export function Page({ title, subtitle, actions, backTo, children }: { title: string; subtitle?: string; actions?: ReactNode; backTo?: string; children: ReactNode }) {
+export function Page({
+  title,
+  subtitle,
+  actions,
+  backTo,
+  noGear,
+  children,
+}: {
+  title: string
+  subtitle?: string
+  actions?: ReactNode
+  backTo?: string
+  noGear?: boolean
+  children: ReactNode
+}) {
   const [scrolled, setScrolled] = useState(false)
   useEffect(() => {
     const on = () => setScrolled(window.scrollY > 4)
@@ -20,7 +34,10 @@ export function Page({ title, subtitle, actions, backTo, children }: { title: st
             {subtitle && <p className="sub ellipsis">{subtitle}</p>}
           </div>
         </div>
-        {actions && <div className="row-s">{actions}</div>}
+        <div className="row-s">
+          {actions}
+          {!noGear && <IconButton icon="Settings" label="Configurações" onClick={() => navigate('/config')} />}
+        </div>
       </header>
       <div className="content stack">{children}</div>
     </>

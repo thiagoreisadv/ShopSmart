@@ -73,3 +73,10 @@ export function pricePerBase(priceCents: Cents, size: Size): Cents | null {
   if (!size.milli) return null
   return mulDiv(priceCents, 1000, size.milli)
 }
+
+/** "500 g", "1,5 L", "12 un" a partir de um tamanho de embalagem. */
+export function formatSizeText(s: Size): string {
+  if (s.unit === 'un') return `${s.milli / 1000} un`
+  if (s.milli >= 1000) return `${(s.milli / 1000).toLocaleString('pt-BR', { maximumFractionDigits: 3 })} ${s.unit === 'kg' ? 'kg' : 'L'}`
+  return `${s.milli} ${s.unit === 'kg' ? 'g' : 'mL'}`
+}

@@ -90,7 +90,7 @@ export default function FuelCalc() {
   const liters = total && kpl > 0 ? total / kpl : null
 
   return (
-    <Page title="Combustível" subtitle="Etanol ou gasolina? Quanto custa o trajeto?" backTo="/mais">
+    <Page title="Combustível" subtitle="Etanol ou gasolina? Quanto custa o trajeto?" backTo="/">
       <Card>
         <h2 style={{ fontSize: 16 }}>Etanol × Gasolina</h2>
         <p className="small muted" style={{ marginBottom: 12 }}>A regra dos 70%: etanol compensa se custar menos de 70% da gasolina.</p>

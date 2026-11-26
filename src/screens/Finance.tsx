@@ -1,4 +1,5 @@
-import { useMemo, useState } from 'react'
+import { Suspense, lazy, useMemo, useState } from 'react'
+import { useRoute } from '@/router'
 import { Page } from '@/components/Page'
 import { Badge, Banner, Button, Card, EmptyState, Field, IconButton, MoneyInput, Progress, Segmented, SelectInput, TextInput } from '@/components/ui'
 import { Icon } from '@/components/Icon'
@@ -46,7 +47,11 @@ function Delta({ cur, prev }: { cur: number; prev: number }) {
   return <span className={`trend ${p > 0 ? 'up' : 'down'}`}><Icon name={p > 0 ? 'ArrowUp' : 'ArrowDown'} />{Math.abs(Math.round(p))}%</span>
 }
 
+const PurchasesView = lazy(() => import('./more/Purchases'))
+
 export default function Finance() {
+  const route = useRoute()
+  const [section, setSection] = useState<'resumo' | 'compras'>(route === '/gastos/compras' || route === '/mais/compras' ? 'compras' : 'resumo')
   const purchases = useAppState((s) => s.purchases)
   const prices = useAppState((s) => s.prices)
   const goals = useAppState((s) => s.settings.goals)
@@ -90,8 +95,9 @@ export default function Finance() {
   const daysInPeriod = r.from && r.to ? Math.max(1, Math.round((r.to.getTime() - r.from.getTime()) / 86400000)) : 0
 
   return (
-    <Page title="Finanças" subtitle="Gastos com supermercado e compras" actions={<><IconButton icon="Target" label="Metas e limites" onClick={() => setGoalsOpen(true)} /><IconButton icon="Settings" label="Filtros" onClick={() => setFiltersOpen(true)} style={activeFilters ? { color: 'var(--primary)' } : undefined} /></>}>
-      {!hasData ? (
+    <Page title="Gastos" subtitle="Supermercado e compras" actions={<><IconButton icon="Target" label="Metas e limites" onClick={() => setGoalsOpen(true)} /><IconButton icon="Layers" label="Filtros" onClick={() => setFiltersOpen(true)} style={activeFilters ? { color: 'var(--primary)' } : undefined} /></>}>
+      <Segmented value={section} onChange={setSection} label="Seção" options={[{ value: 'resumo', label: 'Resumo' }, { value: 'compras', label: 'Compras' }]} />
+      {section === 'compras' ? <Suspense fallback={null}><PurchasesView /></Suspense> : !hasData ? (
         <>
           <EmptyState icon="Wallet" title="Nenhuma compra finalizada" text="Quando você finalizar compras, aqui aparecem gastos por período, categoria e supermercado, evolução mensal e economia." />
           <Card>

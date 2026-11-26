@@ -36,22 +36,22 @@ test.describe('modo compra inteligente', () => {
     await expect(page.getByText('R$ 108,00').first()).toBeVisible()
 
     // Finanças reflete exatamente uma compra
-    await go(page, 'Finanças')
+    await go(page, 'Gastos')
     await expect(page.getByText('R$ 108,00').first()).toBeVisible()
-    await go(page, 'Mais')
-    await page.getByRole('button', { name: /Histórico de compras/ }).click()
+    await page.getByRole('tab', { name: 'Compras' }).click()
     await expect(page.locator('.list-item')).toHaveCount(1)
   })
 
   test('cancelar não contabiliza despesa e libera nova compra', async ({ page }) => {
     await startPurchase(page)
     await addManual(page, 'Café', '1890')
-    await page.getByRole('button', { name: 'Cancelar compra' }).first().click()
+    await page.getByRole('button', { name: 'Mais opções da compra' }).click()
+    await page.getByRole('button', { name: 'Cancelar compra' }).click()
     await page.getByRole('alertdialog').getByRole('button', { name: 'Cancelar compra' }).click()
     await expect(page.getByRole('button', { name: /Iniciar compra/ }).first()).toBeVisible()
-    await go(page, 'Finanças')
+    await go(page, 'Gastos')
     await expect(page.getByText('Nenhuma compra finalizada')).toBeVisible()
-    await openApp(page, '#/mais/compras')
+    await openApp(page, '#/gastos/compras')
     await page.getByRole('tab', { name: 'Canceladas' }).click()
     await expect(page.locator('.list-item')).toHaveCount(1)
   })
@@ -64,7 +64,7 @@ test.describe('modo compra inteligente', () => {
     await page.getByRole('button', { name: 'Aumentar Pão francês' }).click()
     await expect(bar).toContainText('R$ 6,00')
     // por peso
-    await page.getByRole('button', { name: 'Manual' }).click()
+    await page.getByRole('button', { name: 'Digitar produto' }).click()
     const dlg = page.getByRole('dialog', { name: 'Adicionar produto' })
     await dlg.getByLabel('Nome', { exact: true }).fill('Contra filé')
     await dlg.getByRole('tab', { name: 'Quilo' }).click()
@@ -75,7 +75,8 @@ test.describe('modo compra inteligente', () => {
     await dlg.getByRole('button', { name: 'Adicionar ao carrinho' }).click()
     await expect(bar).toContainText('R$ 32,55')
     // remove e desfaz
-    await page.getByRole('button', { name: 'Remover Contra filé' }).click()
+    await page.getByRole('button', { name: 'Editar Contra filé' }).click()
+    await page.getByRole('dialog', { name: 'Editar item' }).getByRole('button', { name: 'Remover item' }).click()
     await expect(bar).toContainText('R$ 6,00')
     await page.getByRole('button', { name: 'Desfazer' }).click()
     await expect(bar).toContainText('R$ 32,55')
@@ -83,7 +84,7 @@ test.describe('modo compra inteligente', () => {
 
   test('produto desconhecido é aprendido e promoção "3 por R$ 10" é calculada', async ({ page }) => {
     await startPurchase(page)
-    await page.getByRole('button', { name: 'Manual' }).click()
+    await page.getByRole('button', { name: 'Digitar produto' }).click()
     const dlg = page.getByRole('dialog', { name: 'Adicionar produto' })
     await dlg.getByLabel('Nome', { exact: true }).fill('Sabonete Dove')
     await dlg.getByLabel(/Preço atual/).fill('399')
@@ -94,7 +95,7 @@ test.describe('modo compra inteligente', () => {
     await dlg.getByRole('button', { name: 'Adicionar ao carrinho' }).click()
     await expect(page.getByRole('region', { name: 'Resumo do carrinho' })).toContainText('R$ 23,99')
     // aprendido no catálogo
-    await openApp(page, '#/mais/catalogo')
+    await openApp(page, '#/catalogo')
     await expect(page.getByText('Sabonete Dove', { exact: true })).toBeVisible()
   })
 
@@ -122,7 +123,7 @@ test.describe('modo compra inteligente', () => {
     const st = page.getByRole('dialog', { name: 'Iniciar compra' })
     await st.getByLabel(/Supermercado|Ou cadastre/).fill('B')
     await st.getByRole('button', { name: 'Começar' }).click()
-    await page.getByRole('button', { name: 'Manual' }).click()
+    await page.getByRole('button', { name: 'Digitar produto' }).click()
     const dlg = page.getByRole('dialog', { name: 'Adicionar produto' })
     await dlg.getByLabel('Nome', { exact: true }).fill('Café Pilão 500g')
     // histórico aparece como referência, NÃO como preço atual

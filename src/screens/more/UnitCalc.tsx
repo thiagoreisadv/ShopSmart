@@ -44,7 +44,7 @@ export default function UnitCalc() {
   const unitLabel = (u: Option['unit']) => (u === 'un' ? 'unidade' : u === 'g' || u === 'kg' ? 'kg' : 'litro')
 
   return (
-    <Page title="Preço por unidade" subtitle="Descubra qual embalagem compensa mais" backTo="/mais">
+    <Page title="Preço por unidade" subtitle="Descubra qual embalagem compensa mais" backTo="/">
       <div className="stack">
         {rows.map(({ o, per, errPrice, errQty }, idx) => {
           const isBest = best?.o.id === o.id

@@ -1,6 +1,5 @@
 import { useMemo, useState } from 'react'
-import { Page } from '@/components/Page'
-import { Badge, Button, Card, EmptyState, IconButton, Segmented } from '@/components/ui'
+import { Badge, Button, Card, EmptyState, Segmented } from '@/components/ui'
 import { Icon } from '@/components/Icon'
 import { Sheet, ConfirmDialog } from '@/components/Sheet'
 import { useAppState } from '@/store/store'
@@ -14,7 +13,7 @@ import { downloadText } from '@/lib/download'
 import { toast } from '@/store/ui'
 import type { Purchase } from '@/domain/types'
 
-export default function Purchases() {
+export default function PurchasesView() {
   const purchases = useAppState((s) => s.purchases)
   const [tab, setTab] = useState<'finalized' | 'cancelled'>('finalized')
   const [sel, setSel] = useState<Purchase | null>(null)
@@ -22,7 +21,7 @@ export default function Purchases() {
   const list = useMemo(() => purchases.filter((p) => p.status === tab).sort((a, b) => (b.finishedAt ?? b.cancelledAt ?? b.startedAt).localeCompare(a.finishedAt ?? a.cancelledAt ?? a.startedAt)), [purchases, tab])
   const active = purchases.find((p) => p.status === 'active')
   return (
-    <Page title="Histórico de compras" subtitle="Compras finalizadas e canceladas" backTo="/mais" actions={<IconButton icon="Download" label="Exportar CSV" onClick={() => { downloadText(`shopsmart-compras-${new Date().toISOString().slice(0, 10)}.csv`, purchasesToCsv(purchases), 'text/csv;charset=utf-8'); toast('CSV exportado', 'success') }} />}>
+    <div className="stack">
       <Segmented value={tab} onChange={setTab} label="Status" options={[{ value: 'finalized', label: 'Finalizadas' }, { value: 'cancelled', label: 'Canceladas' }]} />
       {active && <Card tight><div className="row between"><span className="small"><Badge tone="warn">em andamento</Badge> {active.supermarketName}</span><span className="xs muted">continue na aba Compra</span></div></Card>}
       {list.length === 0 ? <EmptyState icon="Receipt" title={tab === 'finalized' ? 'Nenhuma compra finalizada' : 'Nenhuma compra cancelada'} text={tab === 'finalized' ? 'Finalize uma compra para vê-la aqui.' : 'Compras canceladas não contam como despesa.'} /> : (
@@ -41,6 +40,7 @@ export default function Purchases() {
           </div>
         </Card>
       )}
+      <div className="row" style={{ justifyContent: 'flex-end' }}><Button size="sm" variant="ghost" icon="Download" onClick={() => { downloadText(`shopsmart-compras-${new Date().toISOString().slice(0, 10)}.csv`, purchasesToCsv(purchases), 'text/csv;charset=utf-8'); toast('CSV exportado', 'success') }}>Exportar CSV</Button></div>
       <Sheet open={!!sel} onClose={() => setSel(null)} title={sel?.supermarketName ?? ''} footer={<Button variant="ghost" icon="Trash2" onClick={() => sel && setDel(sel)}>Excluir</Button>}>
         {sel && (
           <div className="stack">
@@ -60,6 +60,6 @@ export default function Purchases() {
         )}
       </Sheet>
       <ConfirmDialog open={!!del} danger title="Excluir compra?" message="A compra e os preços que ela gerou no histórico serão removidos. Essa ação não pode ser desfeita." confirmLabel="Excluir" onCancel={() => setDel(null)} onConfirm={() => { if (del) deletePurchase(del.id); setDel(null); setSel(null); toast('Compra excluída', 'info') }} />
-    </Page>
+    </div>
   )
 }

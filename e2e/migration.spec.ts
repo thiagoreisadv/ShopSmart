@@ -33,7 +33,7 @@ test.describe('migração de dados da v1 (usuário real com dados antigos)', () 
 
   test('calculadora de preço por unidade usa os dados salvos pela v1', async ({ page }) => {
     await seedV1(page)
-    await openApp(page, '#/mais/unidade')
+    await openApp(page, '#/ferramentas/unidade')
     await expect(page.getByText('Mais econômico')).toBeVisible()
     // 10 / 500 g = R$ 20/kg ; 18 / 1 kg = R$ 18/kg → Marca B vence
     await expect(page.getByText('R$ 18,00')).toBeVisible()
@@ -42,7 +42,7 @@ test.describe('migração de dados da v1 (usuário real com dados antigos)', () 
 
   test('migração é idempotente: recarregar não duplica compras do histórico', async ({ page }) => {
     await seedV1(page)
-    await openApp(page, '#/mais/compras')
+    await openApp(page, '#/gastos/compras')
     await expect(page.getByText('Atacadão').first()).toBeVisible()
     await page.reload()
     await page.reload()
@@ -50,10 +50,10 @@ test.describe('migração de dados da v1 (usuário real com dados antigos)', () 
   })
 
   test('usuário novo não vê dados fictícios', async ({ page }) => {
-    await openApp(page, '#/financas')
+    await openApp(page, '#/gastos')
     await expect(page.getByText('Nenhuma compra finalizada')).toBeVisible()
     await go(page, 'Início')
-    await expect(page.getByText('Sem gastos registrados')).toBeVisible()
-    await expect(page.getByText('Nenhuma compra ainda')).toBeVisible()
+    await expect(page.getByRole('region', { name: 'Resumo do mês' })).toContainText('R$ 0,00')
+    await expect(page.getByRole('button', { name: 'Definir orçamento mensal' })).toBeVisible()
   })
 })

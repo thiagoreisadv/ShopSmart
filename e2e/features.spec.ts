@@ -50,7 +50,7 @@ test.describe('listas (funcionalidades da v1 preservadas e modernizadas)', () =>
     await page.getByRole('tab', { name: 'Preços' }).click()
     await expect(page.getByLabel('Arroz 5kg em Atacadão')).toHaveValue('24,90')
     // comparador: Atacadão 5% off
-    await openApp(page, '#/mais/comparador')
+    await openApp(page, '#/listas/comparar')
     await expect(page.getByText('Melhor escolha para a lista completa')).toBeVisible()
     // Atacadão: (2×24,90 + 6×4,59)=77,34 −5% = 73,47 ; Mercado B: 2×26,50 + 6×4,20 = 78,20
     await expect(page.getByText('R$ 73,47').first()).toBeVisible()
@@ -66,7 +66,7 @@ test.describe('listas (funcionalidades da v1 preservadas e modernizadas)', () =>
     await openApp(page, '#/listas')
     await page.getByLabel('Adicionar item à lista').fill('Sem preço')
     await page.getByRole('button', { name: 'Adicionar', exact: true }).click()
-    await openApp(page, '#/mais/comparador')
+    await openApp(page, '#/listas/comparar')
     await expect(page.getByText(/Sem nenhum preço|sem nenhum preço/i).first()).toBeVisible()
     await expect(page.getByText('Melhor escolha para a lista completa')).toHaveCount(0)
     await expect(page.getByText(/Nenhum mercado tem todos os itens/)).toBeVisible()
@@ -78,14 +78,14 @@ test.describe('listas (funcionalidades da v1 preservadas e modernizadas)', () =>
     await page.getByRole('button', { name: 'Concluir compra' }).click()
     await page.getByRole('dialog', { name: 'Concluir compra' }).getByRole('button', { name: /Atacadão/ }).click()
     await expect(page.getByText(/registrada em Finanças/)).toBeVisible()
-    await go(page, 'Finanças')
+    await go(page, 'Gastos')
     await expect(page.getByText('R$ 260,82').first()).toBeVisible() // 187,35 (v1) + 73,47
   })
 })
 
 test.describe('calculadoras', () => {
   test('preço por unidade: validação, melhor opção e conversão', async ({ page }) => {
-    await openApp(page, '#/mais/unidade')
+    await openApp(page, '#/ferramentas/unidade')
     await page.getByLabel('Preço').first().fill('10')
     await page.getByLabel('Quantidade').first().fill('500')
     await page.getByLabel('Preço').nth(1).fill('18')
@@ -97,7 +97,7 @@ test.describe('calculadoras', () => {
     await expect(page.getByText('Informe um valor maior que zero.')).toBeVisible()
   })
   test('preço por unidade: tipos de medida diferentes avisam', async ({ page }) => {
-    await openApp(page, '#/mais/unidade')
+    await openApp(page, '#/ferramentas/unidade')
     await page.getByLabel('Preço').first().fill('10')
     await page.getByLabel('Quantidade').first().fill('500')
     await page.getByLabel('Preço').nth(1).fill('9')
@@ -106,7 +106,7 @@ test.describe('calculadoras', () => {
     await expect(page.getByText(/tipos de medida diferentes/)).toBeVisible()
   })
   test('combustível: regra dos 70% e custo do trajeto', async ({ page }) => {
-    await openApp(page, '#/mais/combustivel')
+    await openApp(page, '#/ferramentas/combustivel')
     await page.getByLabel('Etanol (R$/L)').fill('3.99')
     await page.getByLabel('Gasolina (R$/L)').fill('5.99')
     await expect(page.getByRole('status').filter({ hasText: 'Abasteça com' })).toContainText('Etanol')
@@ -128,7 +128,7 @@ test.describe('calculadoras', () => {
 test.describe('backup e restauração', () => {
   test('exporta JSON/CSV e restaura em um banco limpo', async ({ page, context }) => {
     await seedV1(page)
-    await openApp(page, '#/mais/backup')
+    await openApp(page, '#/config')
     const [dl] = await Promise.all([page.waitForEvent('download'), page.getByRole('button', { name: /Backup completo/ }).click()])
     const path = await dl.path()
     const fs = await import('node:fs')
@@ -143,7 +143,7 @@ test.describe('backup e restauração', () => {
     // "Outro aparelho": contexto novo, sem dados
     const p2 = await context.browser()!.newContext({ ...(test.info().project.use as object), acceptDownloads: true })
     const page2 = await p2.newPage()
-    await page2.goto('./#/mais/backup')
+    await page2.goto('./#/config')
     await page2.locator('input[type=file]').setInputFiles(path!)
     await expect(page2.getByRole('dialog', { name: 'Importar backup' })).toContainText('2 listas')
     await page2.getByRole('button', { name: 'Mesclar com meus dados' }).click()
@@ -155,7 +155,7 @@ test.describe('backup e restauração', () => {
   })
 
   test('arquivo inválido é recusado sem alterar dados', async ({ page }) => {
-    await openApp(page, '#/mais/backup')
+    await openApp(page, '#/config')
     await page.locator('input[type=file]').setInputFiles({ name: 'x.json', mimeType: 'application/json', buffer: Buffer.from('{"foo":1}') })
     await expect(page.getByRole('dialog', { name: 'Importar backup' })).toContainText('não é um backup do ShopSmart')
     await expect(page.getByRole('button', { name: /Mesclar|Substituir/ })).toHaveCount(0)
@@ -163,7 +163,7 @@ test.describe('backup e restauração', () => {
 
   test('substituir tudo exige confirmação', async ({ page }) => {
     await seedV1(page)
-    await openApp(page, '#/mais/backup')
+    await openApp(page, '#/config')
     const [dl] = await Promise.all([page.waitForEvent('download'), page.getByRole('button', { name: /Backup completo/ }).click()])
     await page.locator('input[type=file]').setInputFiles((await dl.path())!)
     const dlg = page.getByRole('dialog', { name: 'Importar backup' })

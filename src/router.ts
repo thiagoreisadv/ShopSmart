@@ -24,3 +24,27 @@ export function back(fallback = '/'): void {
 }
 /** "/mais/comparador" → ["mais", "comparador"] */
 export const segments = (p: string): string[] => p.split('/').filter(Boolean)
+
+/** Rotas da v2.0 → rotas atuais (links, atalhos do PWA e favoritos antigos continuam funcionando). */
+const LEGACY: Record<string, string> = {
+  '/compra': '/comprar',
+  '/financas': '/gastos',
+  '/mais': '/',
+  '/mais/comparador': '/listas/comparar',
+  '/mais/catalogo': '/catalogo',
+  '/mais/precos': '/catalogo',
+  '/mais/compras': '/gastos/compras',
+  '/mais/unidade': '/ferramentas/unidade',
+  '/mais/combustivel': '/ferramentas/combustivel',
+  '/mais/config': '/config',
+  '/mais/backup': '/config',
+}
+export function canonicalRoute(path: string): string {
+  return LEGACY[path] ?? path
+}
+
+/** Aba da navegação inferior à qual a rota pertence (ferramentas e catálogo ficam sob Início). */
+export function tabOf(route: string): '/' | '/listas' | '/comprar' | '/gastos' {
+  const s = segments(canonicalRoute(route))[0]
+  return s === 'listas' ? '/listas' : s === 'comprar' ? '/comprar' : s === 'gastos' ? '/gastos' : '/'
+}

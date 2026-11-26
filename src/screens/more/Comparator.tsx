@@ -1,6 +1,5 @@
-import { useMemo, useState } from 'react'
-import { Page } from '@/components/Page'
-import { Badge, Banner, Button, Card, EmptyState, SelectInput } from '@/components/ui'
+import { useMemo } from 'react'
+import { Badge, Banner, Button, Card, EmptyState } from '@/components/ui'
 import { Icon } from '@/components/Icon'
 import { useAppState } from '@/store/store'
 import { compareMarkets } from '@/domain/compare'
@@ -9,11 +8,9 @@ import { navigate } from '@/router'
 import { updateList } from '@/store/actions'
 import { centsFromDigits, formatDecimal } from '@/lib/money'
 
-export default function Comparator() {
+export default function ComparatorView({ listId }: { listId: string }) {
   const lists = useAppState((s) => s.lists)
-  const activeId = useAppState((s) => s.activeListId)
   const allData = useAppState((s) => s.listData)
-  const [listId, setListId] = useState(activeId)
   const data = allData[listId]
   const cmp = useMemo(() => (data ? compareMarkets(data) : null), [data])
   const list = lists.find((l) => l.id === listId)
@@ -22,10 +19,7 @@ export default function Comparator() {
   const maxNet = Math.max(...cmp.results.filter((r) => r.complete).map((r) => r.netCents), 0)
 
   return (
-    <Page title="Comparador" subtitle="Qual supermercado compensa para a sua lista" backTo="/mais">
-      <SelectInput label="Lista" value={listId} onChange={(e) => setListId(e.target.value)}>
-        {lists.map((l) => <option key={l.id} value={l.id}>{l.name}</option>)}
-      </SelectInput>
+    <div className="stack">
 
       {noProducts ? (
         <EmptyState icon="Layers" title="A lista está vazia" text="Adicione itens e informe preços em pelo menos dois mercados para comparar." action={<Button variant="primary" onClick={() => navigate('/listas')}>Abrir listas</Button>} />
@@ -67,7 +61,7 @@ export default function Comparator() {
                 </div>
               ))}
             </div>
-            <p className="xs muted" style={{ marginTop: 10 }}>Dica: calcule o custo da viagem em <button style={{ textDecoration: 'underline' }} onClick={() => navigate('/mais/combustivel')}>Combustível</button> e informe aqui.</p>
+            <p className="xs muted" style={{ marginTop: 10 }}>Dica: calcule o custo da viagem em <button style={{ textDecoration: 'underline' }} onClick={() => navigate('/ferramentas/combustivel')}>Combustível</button> e informe aqui.</p>
           </Card>
 
           <Card>
@@ -94,6 +88,6 @@ export default function Comparator() {
           <Button icon="Tag" onClick={() => navigate('/listas')}><Icon name="Pencil" /> Editar preços na lista</Button>
         </>
       )}
-    </Page>
+    </div>
   )
 }

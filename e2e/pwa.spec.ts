@@ -26,7 +26,7 @@ test.describe('PWA', () => {
     await expect(page.getByText('Sem conexão')).toBeVisible()
     await page.goto('./#/listas')
     await expect(page.getByRole('heading', { name: 'Listas', exact: true })).toBeVisible()
-    await page.goto('./#/mais/unidade')
+    await page.goto('./#/ferramentas/unidade')
     await expect(page.getByRole('heading', { name: 'Preço por unidade' })).toBeVisible()
     await context.setOffline(false)
   })

@@ -27,13 +27,13 @@ export async function openApp(page: Page, hash = '') {
   await expect(page.locator('#main')).toBeVisible()
 }
 
-export async function go(page: Page, tab: 'Início' | 'Listas' | 'Compra' | 'Finanças' | 'Mais') {
+export async function go(page: Page, tab: 'Início' | 'Listas' | 'Comprar' | 'Gastos') {
   const nav = page.locator('.bottom-nav:visible, .sidebar:visible').first()
   await nav.getByRole('button', { name: tab, exact: false }).first().click()
 }
 
 export async function startPurchase(page: Page, opts: { market?: string; city?: string; budget?: string } = {}) {
-  await openApp(page, '#/compra')
+  await openApp(page, '#/comprar')
   await page.getByRole('button', { name: /Iniciar compra/ }).first().click()
   const dlg = page.getByRole('dialog', { name: 'Iniciar compra' })
   await dlg.getByLabel(/Supermercado|Ou cadastre um novo/).fill(opts.market ?? 'Atacadão')
@@ -44,7 +44,7 @@ export async function startPurchase(page: Page, opts: { market?: string; city?: 
 }
 
 export async function addManual(page: Page, name: string, priceDigits: string, qty = '1') {
-  await page.getByRole('button', { name: 'Manual' }).click()
+  await page.getByRole('button', { name: 'Digitar produto' }).click()
   const dlg = page.getByRole('dialog', { name: 'Adicionar produto' })
   await dlg.getByLabel('Nome', { exact: true }).fill(name)
   await dlg.getByLabel(/Preço atual/).fill(priceDigits)

@@ -47,6 +47,7 @@ export default function ItemSheet({
   title,
   onScanPrice,
   sourceNote,
+  onRemove,
 }: {
   open: boolean
   onClose: () => void
@@ -58,6 +59,8 @@ export default function ItemSheet({
   onScanPrice?: () => void
   /** de onde veio a identificação do produto */
   sourceNote?: string
+  /** só no modo edição: remove o item do carrinho */
+  onRemove?: () => void
 }) {
   const products = useAppState((s) => s.products)
   const prices = useAppState((s) => s.prices)
@@ -167,7 +170,7 @@ export default function ItemSheet({
       title={title ?? (mode === 'edit' ? 'Editar item' : 'Adicionar produto')}
       footer={
         <>
-          <Button variant="ghost" onClick={onClose}>Cancelar</Button>
+          {mode === 'edit' && onRemove ? <Button variant="ghost" icon="Trash2" onClick={onRemove}>Remover item</Button> : <Button variant="ghost" onClick={onClose}>Cancelar</Button>}
           <Button variant="primary" className="grow" icon="Check" onClick={submit}>
             {mode === 'edit' ? 'Salvar' : 'Adicionar ao carrinho'}
           </Button>

@@ -1,5 +1,4 @@
 import { useRef, useState } from 'react'
-import { Page } from '@/components/Page'
 import { Badge, Banner, Button, Card } from '@/components/ui'
 import { Sheet, ConfirmDialog } from '@/components/Sheet'
 import { createLogicalBackup, dumpAll, importLegacyListFile, listLogicalBackups, parseBackup, purchasesToCsv, readLogicalBackup, restoreBackup, type ParseResult } from '@/storage/backup'
@@ -12,7 +11,7 @@ import { formatDateTime } from '@/lib/dates'
 import type { Purchase } from '@/domain/types'
 import { useEffect } from 'react'
 
-export default function Backup() {
+export default function BackupSection() {
   const fileRef = useRef<HTMLInputElement>(null)
   const [parsed, setParsed] = useState<{ name: string; r: ParseResult } | null>(null)
   const [mode, setMode] = useState<'merge' | 'replace'>('merge')
@@ -63,7 +62,7 @@ export default function Backup() {
   }
 
   return (
-    <Page title="Backup e restauração" subtitle="Seus dados ficam neste aparelho" backTo="/mais">
+    <div className="stack">
       <Card className="stack">
         <h2 style={{ fontSize: 16 }}>Exportar</h2>
         <p className="small muted">Guarde uma cópia: listas, produtos, supermercados, preços, compras, configurações e orçamentos.</p>
@@ -111,6 +110,6 @@ export default function Backup() {
       </Sheet>
       <ConfirmDialog open={confirmReplace} danger title="Substituir todos os dados?" message="Listas, compras e preços atuais serão substituídos pelos do arquivo. Criaremos uma cópia de segurança antes, que você poderá restaurar depois." confirmLabel="Substituir" onCancel={() => setConfirmReplace(false)} onConfirm={() => { setConfirmReplace(false); void apply() }} />
       <Button variant="ghost" size="sm" onClick={async () => { await createLogicalBackup('manual', localStorage); setBackups(await listLogicalBackups()); toast('Cópia de segurança criada neste aparelho', 'success') }}>Criar cópia de segurança agora</Button>
-    </Page>
+    </div>
   )
 }

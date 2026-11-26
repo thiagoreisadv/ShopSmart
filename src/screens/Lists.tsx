@@ -11,17 +11,16 @@ import { toast, setPendingStartList } from '@/store/ui'
 import { CATEGORIES, categoryById } from '@/domain/categories'
 import { compareMarkets } from '@/domain/compare'
 import { formatBRL, parseMoney, centsFromDigits, formatDecimal } from '@/lib/money'
-import { navigate } from '@/router'
+import { navigate, useRoute } from '@/router'
 import { uid } from '@/lib/id'
 import { parseSize } from '@/lib/units'
 import { formatDate } from '@/lib/dates'
 import { parseBackup, importLegacyListFile } from '@/storage/backup'
 import { reloadFromDb } from '@/store/actions'
-import { lookupBarcode } from '@/services/lookup'
-import { getState } from '@/store/store'
 import type { ListData, ListProduct } from '@/domain/types'
 
-const BarcodeScanner = lazy(() => import('@/components/BarcodeScanner'))
+const SmartCapture = lazy(() => import('@/components/SmartCapture'))
+const ComparatorView = lazy(() => import('./more/Comparator'))
 
 function ListsManager({ open, onClose }: { open: boolean; onClose: () => void }) {
   const lists = useAppState((s) => s.lists)
@@ -141,7 +140,8 @@ export default function Lists() {
   const data = useAppState((s) => s.listData[s.activeListId]) as ListData | undefined
   const frequent = useAppState((s) => s.frequent)
   const purchases = useAppState((s) => s.purchases)
-  const [view, setView] = useState<'list' | 'prices'>('list')
+  const route = useRoute()
+  const [view, setView] = useState<'list' | 'prices' | 'compare'>(route === '/listas/comparar' || route === '/mais/comparador' ? 'compare' : 'list')
   const [text, setText] = useState('')
   const [mgr, setMgr] = useState(false)
   const [hist, setHist] = useState(false)
@@ -214,17 +214,9 @@ export default function Lists() {
     setText('')
   }
 
-  const onScanned = async (code: string) => {
-    setScan(false)
-    const out = await lookupBarcode(code, { personal: getState().products })
-    if (out.found) {
-      addListProduct(activeId, out.found.name, out.found.category, { barcode: out.found.barcode, packSize: out.found.size })
-      toast(`“${out.found.name}” adicionado à lista`, 'success')
-    } else {
-      setText('')
-      toast('Produto não encontrado nas bases. Digite o nome para adicionar.', 'info')
-      inputRef.current?.focus()
-    }
+  const onScanned = (p: { name: string; category: string; barcode: string; size?: { milli: number; unit: 'un' | 'kg' | 'l' } }) => {
+    addListProduct(activeId, p.name, p.category, { barcode: p.barcode || undefined, packSize: p.size })
+    toast(`“${p.name}” adicionado à lista`, 'success')
   }
 
   const finishFromList = (marketId: string) => {
@@ -250,10 +242,12 @@ export default function Lists() {
       <div className="row-s wrap">
         <button className="chip active" onClick={() => setMgr(true)}><Icon name="ListChecks" /> {list.name} <Icon name="ChevronDown" /></button>
         <div style={{ flex: 1, minWidth: 220 }}>
-          <Segmented value={view} onChange={setView} label="Visualização" options={[{ value: 'list', label: 'Lista' }, { value: 'prices', label: 'Preços' }]} />
+          <Segmented value={view} onChange={setView} label="Visualização" options={[{ value: 'list', label: 'Lista' }, { value: 'prices', label: 'Preços' }, { value: 'compare', label: 'Comparar' }]} />
         </div>
       </div>
 
+      {view !== 'compare' && (
+        <>
       <section className="hero" aria-label="Resumo da lista">
         <div className="row between">
           <div>
@@ -282,6 +276,9 @@ export default function Lists() {
             <button key={s.name} className="chip" style={{ flex: 'none' }} onClick={() => addListProduct(activeId, s.name, s.category)}><Icon name="Plus" /> {s.name}</button>
           ))}
         </div>
+      )}
+
+        </>
       )}
 
       {view === 'list' ? (
@@ -320,20 +317,22 @@ export default function Lists() {
             </Card>
           )}
         </>
+      ) : view === 'compare' ? (
+        <Suspense fallback={null}><ComparatorView listId={activeId} /></Suspense>
       ) : (
-        <PricesView data={data} listId={activeId} cmp={cmp!} onAddMarket={addMarket} onDeleteMarket={(id) => setMarketDel(id)} />
+        <PricesView data={data} listId={activeId} cmp={cmp!} onAddMarket={addMarket} onDeleteMarket={(id) => setMarketDel(id)} onCompare={() => setView('compare')} />
       )}
 
       {data.products.length > 0 && (
         <div className="grid-2">
-          <Button variant="primary" icon="ShoppingCart" onClick={() => { setPendingStartList(activeId); navigate('/compra') }}>Comprar com esta lista</Button>
+          <Button variant="primary" icon="ShoppingCart" onClick={() => { setPendingStartList(activeId); navigate('/comprar') }}>Comprar com esta lista</Button>
           <Button icon="Check" onClick={() => setFinOpen(true)}>Concluir compra</Button>
         </div>
       )}
 
       <ListsManager open={mgr} onClose={() => setMgr(false)} />
       <ItemEditSheet listId={activeId} item={edit} open={!!edit} onClose={() => setEdit(null)} />
-      <Suspense fallback={null}>{scan && <BarcodeScanner onResult={(r) => void onScanned(r.barcode)} onClose={() => setScan(false)} />}</Suspense>
+      <Suspense fallback={null}>{scan && <SmartCapture mode="list" onListProduct={onScanned} onClose={() => setScan(false)} />}</Suspense>
 
       <Sheet open={budgetOpen} onClose={() => setBudgetOpen(false)} title="Orçamento da lista">
         <BudgetEditor value={budgetCents} onSave={(c) => { upd((d) => ({ ...d, budget: c ? (c / 100).toFixed(2) : '0' })); setBudgetOpen(false) }} />
@@ -401,7 +400,7 @@ function ListRow({ p, onToggle, onStar, onQty, onEdit, onRemove }: { p: ListProd
   )
 }
 
-function PricesView({ data, listId, cmp, onAddMarket, onDeleteMarket }: { data: ListData; listId: string; cmp: NonNullable<ReturnType<typeof compareMarkets>>; onAddMarket: () => void; onDeleteMarket: (id: string) => void }) {
+function PricesView({ data, listId, cmp, onAddMarket, onDeleteMarket, onCompare }: { data: ListData; listId: string; cmp: NonNullable<ReturnType<typeof compareMarkets>>; onAddMarket: () => void; onDeleteMarket: (id: string) => void; onCompare: () => void }) {
   const upd = (fn: (d: ListData) => ListData) => updateList(listId, fn)
   const setMarket = (id: string, p: Partial<ListData['markets'][number]>) => upd((d) => ({ ...d, markets: d.markets.map((m) => (m.id === id ? { ...m, ...p } : m)) }))
   const setPrice = (pid: string, mid: string, v: string) => upd((d) => ({ ...d, products: d.products.map((p) => (p.id === pid ? { ...p, prices: { ...p.prices, [mid]: v } } : p)) }))
@@ -427,7 +426,7 @@ function PricesView({ data, listId, cmp, onAddMarket, onDeleteMarket }: { data: 
             </div>
           ))}
         </div>
-        {cmp.winner && <Banner tone="good">Melhor preço: <b>{cmp.winner.market.name}</b> ({formatBRL(cmp.winner.totalCents)}).{' '}<button className="small" style={{ textDecoration: 'underline' }} onClick={() => navigate('/mais/comparador')}>Ver comparação completa</button></Banner>}
+        {cmp.winner && <Banner tone="good">Melhor preço: <b>{cmp.winner.market.name}</b> ({formatBRL(cmp.winner.totalCents)}).{' '}<button className="small" style={{ textDecoration: 'underline' }} onClick={onCompare}>Ver comparação completa</button></Banner>}
       </Card>
 
       {data.products.length === 0 ? <EmptyState icon="Tag" title="Sem itens para precificar" text="Adicione itens na aba Lista e volte aqui para informar os preços em cada mercado." /> : (
