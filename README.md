@@ -3,15 +3,16 @@
 **Compre melhor. Economize mais.**
 Aplicativo web (PWA) de planejamento de compras, reconhecimento de produtos, comparação de preços e controle financeiro doméstico. Funciona no iPhone, no Android e no desktop, hospedado no GitHub Pages (`/ShopSmart/`), sem servidor e sem serviços pagos.
 
-## Funcionalidades
-- **Início**: gasto do mês, orçamento, saldo, ticket médio, economia comprovada, evolução, compras recentes, listas pendentes, mais comprados.
-- **Listas**: várias listas, categorias recolhíveis, essenciais, quantidades, notas, itens frequentes, preços por mercado, compartilhamento (WhatsApp), exportar/importar lista.
-- **Compra inteligente**: sessão com supermercado/cidade/orçamento, carrinho em tempo real (centavos inteiros, kg/g/L/mL/un, promoções "leve N por R$ X", descontos), alertas 80/90/100 %, recuperação após fechar/atualizar/ficar offline, finalização idempotente.
-- **Leitura de etiqueta (OCR local)** com Tesseract.js carregado sob demanda e hospedado no próprio site; recorte, pré-processamento, candidatos de preço e confirmação obrigatória.
-- **Leitor de código de barras** (EAN‑13/8, UPC‑A/E, Code 128, QR) com `BarcodeDetector` nativo ou ZXing, lanterna, busca manual, anti‑duplicidade, liberação da câmera.
-- **Catálogo**: pessoal (IndexedDB) → catálogo estático ShopSmart (shards) → Open Food/Beauty/Products Facts → cadastro manual. Correções do usuário nunca são sobrescritas.
-- **Finanças**: períodos, filtros, categorias, supermercados, comparação de meses, metas, alertas, economia **comprovada** × **estimada**.
-- **Mais**: comparador de supermercados (com deslocamento e economia líquida), catálogo, histórico de preços, histórico de compras, calculadoras (preço por unidade e combustível), configurações, backup/restauração.
+## Funcionalidades (v2.1 — interface simplificada)
+Navegação com 4 destinos: **Início, Listas, Comprar, Gastos**. Configurações na engrenagem do cabeçalho.
+- **Início**: gasto do mês com limite e saldo, botão Iniciar/Continuar compra, listas recentes e ferramentas rápidas (comparar preços, preço por unidade, combustível).
+- **Listas**: Lista · Preços · **Comparar** (comparador de supermercados integrado), múltiplas listas, itens frequentes, exportar/importar.
+- **Comprar**: total e orçamento restante sempre visíveis, ação principal **Escanear** ao alcance do polegar, edição em bottom sheet, menu contextual (orçamento, categorias, lista vinculada, cancelar), sessão recuperável.
+- **Câmera unificada**: código de barras detectado continuamente (leve); OCR de etiqueta só ao tocar em *Ler etiqueta* (ou foto da galeria); confirmação rápida; vários produtos em sequência; digitação manual sempre disponível.
+- **Gastos**: resumo (período, categorias, supermercados, metas, alertas) e aba **Compras** (histórico, CSV).
+- **Configurações**: aparência, animações, privacidade, **backup e restauração**, acesso ao **catálogo de produtos** (com **histórico de preços** por produto).
+- Mantidos: OCR, ZXing, IndexedDB, migrações, robô de catálogo, PWA offline, calculadoras.
+Links antigos (`#/financas`, `#/mais/...`) redirecionam para as novas rotas.
 
 ## Desenvolvimento
 ```bash
