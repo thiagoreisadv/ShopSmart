@@ -8,7 +8,8 @@ test.describe('modo compra inteligente', () => {
     await expect(bar).toContainText('R$ 0,00')
     await addManual(page, 'Arroz Camil 5kg', '2490')
     await expect(bar).toContainText('R$ 24,90')
-    await expect(bar).toContainText('25%')
+    await expect(bar).toContainText('Restante')
+    await expect(bar).toContainText('R$ 75,10')
     await addManual(page, 'Leite integral', '499', '6')
     await expect(bar).toContainText('R$ 54,84') // 24,90 + 6×4,99
     // 80% → 100%: alerta, sem bloquear

@@ -37,3 +37,16 @@ export function writeBarcodeY4m(code: string): string {
   fs.writeFileSync(file, Buffer.concat([header, ...Array.from({ length: 10 }, () => frame)]))
   return file
 }
+
+/** Vídeo "câmera apontada para uma parede branca": sem código de barras. */
+export function writeBlankY4m(): string {
+  const W = 640
+  const H = 480
+  const y = Buffer.alloc(W * H, 235)
+  const u = Buffer.alloc((W / 2) * (H / 2), 128)
+  const header = Buffer.from(`YUV4MPEG2 W${W} H${H} F10:1 Ip A1:1 C420jpeg\n`)
+  const frame = Buffer.concat([Buffer.from('FRAME\n'), y, u, u])
+  const file = path.join(os.tmpdir(), 'shopsmart-blank.y4m')
+  fs.writeFileSync(file, Buffer.concat([header, ...Array.from({ length: 10 }, () => frame)]))
+  return file
+}

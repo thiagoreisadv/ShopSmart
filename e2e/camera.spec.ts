@@ -1,6 +1,6 @@
 import { test, expect, type Page } from '@playwright/test'
 import { startPurchase } from './helpers'
-import { writeBarcodeY4m } from './media'
+import { writeBarcodeY4m, writeBlankY4m } from './media'
 
 const CODE = '7891000100103'
 const y4m = writeBarcodeY4m(CODE)
@@ -140,7 +140,9 @@ test.describe('câmera unificada — código de barras (câmera simulada)', () =
 })
 
 test.describe('câmera unificada — OCR de etiqueta (Tesseract real)', () => {
-  test('OCR só roda sob demanda: foto da etiqueta → candidatos → confirmação → carrinho', async ({ page }) => {
+  test.describe('sem código de barras na imagem', () => {
+    test.use({ launchOptions: { executablePath: process.env.PW_CHROMIUM, args: ['--no-sandbox', '--use-fake-device-for-media-stream', '--use-fake-ui-for-media-stream', `--use-file-for-fake-video-capture=${writeBlankY4m()}`] } })
+    test('OCR só roda sob demanda: foto da etiqueta → candidatos → confirmação → carrinho', async ({ page }) => {
     test.setTimeout(180_000)
     await mockNet(page, { status: 0 })
     const png = await labelPng(page)
@@ -159,6 +161,7 @@ test.describe('câmera unificada — OCR de etiqueta (Tesseract real)', () => {
     await panel.getByRole('button', { name: /Confirmar e adicionar/ }).click()
     await cam.getByRole('button', { name: 'Fechar câmera' }).click()
     await expect(page.getByRole('region', { name: 'Resumo do carrinho' })).toContainText('R$ 24,90')
+  })
   })
 
   test('produto identificado por código + preço lido da etiqueta (nome do código é mantido)', async ({ page }) => {
