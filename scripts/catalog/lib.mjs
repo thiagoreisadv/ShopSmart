@@ -106,12 +106,11 @@ export function toRecord(raw, source) {
 export function mergeRows(a, b) {
   if (!a) return b
   if (!b) return a
-  const [name, brand, cat, sm, su, src, upd] = a
-  const [name2, brand2, cat2, sm2, su2, src2, upd2] = b
+  const [, , , , , src, upd] = a
+  const [, , , , , src2, upd2] = b
   const aNewer = upd > upd2 || (upd === upd2 && (SOURCE_PRIORITY[src] ?? 0) >= (SOURCE_PRIORITY[src2] ?? 0))
   const win = aNewer ? a : b
   const lose = aNewer ? b : a
-  void name, brand, cat, sm, su, src, upd, name2, brand2, cat2, sm2, su2, src2, upd2
   return [win[0] || lose[0], win[1] || lose[1], win[2] !== 'geral' ? win[2] : lose[2] || win[2], win[3] ? win[3] : lose[3], win[3] ? win[4] : lose[4], win[5], win[6] || lose[6]]
 }
 
