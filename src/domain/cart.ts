@@ -68,7 +68,8 @@ export function budgetStatus(totalCents: Cents, budgetCents: Cents): BudgetStatu
 
 const ORDER: BudgetLevel[] = ['none', 'ok', 'w80', 'w90', 'over']
 /** Retorna o nível se a mudança de total cruzou um novo limiar (80/90/100%) para cima; senão null. */
-export function crossedThreshold(prevTotal: Cents, nextTotal: Cents, budgetCents: Cents): BudgetLevel | null {
+export type AlertLevel = 'w80' | 'w90' | 'over'
+export function crossedThreshold(prevTotal: Cents, nextTotal: Cents, budgetCents: Cents): AlertLevel | null {
   const a = budgetStatus(prevTotal, budgetCents).level
   const b = budgetStatus(nextTotal, budgetCents).level
   if (ORDER.indexOf(b) > ORDER.indexOf(a) && (b === 'w80' || b === 'w90' || b === 'over')) return b

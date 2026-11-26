@@ -115,3 +115,20 @@ export async function kvKeys(prefix = ''): Promise<string[]> {
   const rows = await getAll<{ key: string }>('kv')
   return rows.map((r) => r.key).filter((k) => k.startsWith(prefix))
 }
+
+/** Várias gravações em uma única transação atômica (tudo ou nada). */
+export async function writeBatch(ops: { store: StoreName; put?: unknown[]; delete?: IDBValidKey[] }[]): Promise<void> {
+  const db = await openDb()
+  const names = [...new Set(ops.map((o) => o.store))]
+  await new Promise<void>((resolve, reject) => {
+    const tx = db.transaction(names, 'readwrite')
+    for (const op of ops) {
+      const os = tx.objectStore(op.store)
+      for (const v of op.put ?? []) os.put(v)
+      for (const k of op.delete ?? []) os.delete(k)
+    }
+    tx.oncomplete = () => resolve()
+    tx.onerror = () => reject(tx.error)
+    tx.onabort = () => reject(tx.error)
+  })
+}
