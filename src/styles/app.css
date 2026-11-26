@@ -406,3 +406,27 @@ a { color: var(--primary); }
 .segmented .pill { border-radius: 8px; box-shadow: none; border: 1px solid var(--border); }
 .hero .btn { background: transparent; color: inherit; border-color: rgb(255 255 255 / 0.3); }
 @media (min-width: 900px) { .capture-dock .inner { max-width: 520px; } }
+
+/* ---------- v2.1 — componentes da tela inicial ---------- */
+.hero { display: flex; flex-direction: column; gap: 4px; background: linear-gradient(150deg, #0b6b4f, #064e3b); }
+:root[data-theme='dark'] .hero { background: linear-gradient(150deg, #0f3d31, #0a2b24); }
+.hero .figure { color: #fff; }
+.hero .label { font-size: 14px; }
+.hero .progress { margin-top: 8px; background: rgb(255 255 255 / 0.2); }
+.hero .progress > div { background: #86efac; }
+.hero .progress.warn > div { background: #fbbf24; }
+.hero .progress.danger > div { background: #fca5a5; }
+.link-on-dark { color: #bbf7d0; font-weight: 600; font-size: 13px; min-height: 32px; }
+.cta-row { display: flex; align-items: center; gap: 14px; width: 100%; padding: 14px 16px; border-radius: var(--radius-l); background: var(--primary); color: var(--on-primary); text-align: left; transition: transform .1s var(--ease), background .15s; touch-action: manipulation; }
+.cta-row:hover { background: var(--primary-hover); }
+.cta-row:active { transform: scale(0.985); }
+.cta-row b { display: block; font-size: 17px; font-weight: 650; }
+.cta-row span span { display: block; font-size: 13px; opacity: 0.88; }
+.list-card { display: flex; align-items: center; gap: 12px; width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: var(--radius-l); background: var(--surface); text-align: left; transition: background .15s, transform .1s; }
+.list-card:active { transform: scale(0.99); background: var(--surface-2); }
+.list-card .tile { width: 44px; height: 44px; border-radius: 12px; background: var(--primary-soft); color: var(--primary-soft-text); display: grid; place-items: center; flex: none; }
+.list-card .progress { height: 5px; margin-top: 8px; }
+.tools .tool { align-items: center; text-align: center; min-height: 92px; justify-content: center; }
+.cap-panel .pid { display: flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 600; color: var(--primary-soft-text); }
+.cap-panel .bigprice input { font-size: 22px; font-weight: 650; min-height: 52px; }
+.cap-panel .confirm-btn { width: 100%; min-height: 52px; font-size: 16px; }

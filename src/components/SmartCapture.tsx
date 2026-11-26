@@ -306,6 +306,7 @@ export default function SmartCapture({
         {phase === 'confirm' && draft && (
           <motion.div key="confirm" className="cap-panel" initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }} transition={{ type: 'spring', stiffness: 420, damping: 40 }} role="group" aria-label="Confirmar produto">
             <div className="stack-s">
+              {draft.name && draft.source !== 'manual' && draft.source !== 'ocr' && <div className="pid"><Icon name="CircleCheck" size={16} /> Produto identificado</div>}
               {draft.warnings.map((w) => <p key={w} className="xs muted">{w}</p>)}
               <input className="input" aria-label="Nome do produto" placeholder="Nome do produto" value={draft.name} onChange={(e) => patch({ name: e.target.value })} autoFocus={!draft.name} />
               <div className="xs muted ellipsis">
@@ -328,7 +329,7 @@ export default function SmartCapture({
                     </div>
                   )}
                   <div className="row-s">
-                    <div className="input-affix grow">
+                    <div className="input-affix grow bigprice">
                       <span className="affix">R$</span>
                       <input className="input num" inputMode="numeric" autoComplete="off" aria-label="Preço" placeholder="0,00" autoFocus={!!draft.name && draft.priceCents === 0}
                         value={draft.priceCents ? formatDecimal(draft.priceCents) : ''}
@@ -369,14 +370,12 @@ export default function SmartCapture({
                   {showText && ocrText && <pre className="xs muted" style={{ whiteSpace: 'pre-wrap', margin: 0, maxHeight: 90, overflow: 'auto' }}>{ocrText}</pre>}
                 </>
               )}
-              <div className="row-s" style={{ justifyContent: 'space-between' }}>
-                <button className="btn ghost" onClick={cancelDraft}>Cancelar</button>
-                <div className="row-s">
-                  {mode === 'cart' && onDetails && <button className="btn ghost" onClick={() => onDetails(draft)}>Detalhes</button>}
-                  <button className="btn primary" disabled={mode === 'cart' ? !canAdd(draft) : !draft.name.trim()} onClick={mode === 'cart' ? confirmAdd : addToList}>
-                    <Icon name="Check" /> {mode === 'cart' ? 'Adicionar' : 'Adicionar à lista'}
-                  </button>
-                </div>
+              <button className="btn primary confirm-btn" disabled={mode === 'cart' ? !canAdd(draft) : !draft.name.trim()} onClick={mode === 'cart' ? confirmAdd : addToList}>
+                <Icon name="Check" /> {mode === 'cart' ? 'Confirmar e adicionar' : 'Adicionar à lista'}
+              </button>
+              <div className="row-s" style={{ justifyContent: 'center', gap: 20 }}>
+                {mode === 'cart' && onDetails && <button className="link" onClick={() => onDetails(draft)}>Inserir manualmente</button>}
+                <button className="link" style={{ color: 'var(--muted)' }} onClick={cancelDraft}>Cancelar</button>
               </div>
             </div>
           </motion.div>

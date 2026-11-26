@@ -14,11 +14,12 @@ import { addMonths, addDays, startOfDay, startOfMonth, startOfWeek, startOfYear 
 import { formatBRL, pct } from '@/lib/money'
 import type { PaymentMethod } from '@/domain/types'
 
-type Preset = 'day' | 'week' | 'month' | 'year' | 'all' | 'custom'
+type Preset = 'day' | 'week' | 'month' | 'quarter' | 'year' | 'all' | 'custom'
 const PRESETS: { value: Preset; label: string }[] = [
   { value: 'day', label: 'Dia' },
   { value: 'week', label: 'Semana' },
   { value: 'month', label: 'Mês' },
+  { value: 'quarter', label: 'Trim.' },
   { value: 'year', label: 'Ano' },
 ]
 const PAYMENTS: { value: PaymentMethod; label: string }[] = [
@@ -31,6 +32,7 @@ function range(p: Preset, now: Date, custom: { from: string; to: string }): { fr
     case 'day': return { from: startOfDay(now), to: addDays(startOfDay(now), 1), label: 'Hoje' }
     case 'week': { const w = startOfWeek(now); return { from: w, to: addDays(w, 7), label: 'Esta semana' } }
     case 'month': { const m = startOfMonth(now); return { from: m, to: addMonths(m, 1), label: 'Este mês' } }
+    case 'quarter': { const q = new Date(now.getFullYear(), Math.floor(now.getMonth() / 3) * 3, 1); return { from: q, to: addMonths(q, 3), label: 'Este trimestre' } }
     case 'year': { const y = startOfYear(now); return { from: y, to: new Date(y.getFullYear() + 1, 0, 1), label: 'Este ano' } }
     case 'custom': {
       const f = custom.from ? new Date(custom.from + 'T00:00:00') : undefined
@@ -221,7 +223,7 @@ export default function Finance() {
         <div className="stack">
           <Field label="Período">
             <div className="row-s wrap">
-              {([['day', 'Hoje'], ['week', 'Semana'], ['month', 'Mês'], ['year', 'Ano'], ['all', 'Tudo'], ['custom', 'Personalizado']] as [Preset, string][]).map(([v, l]) => <button key={v} className={`chip ${preset === v ? 'active' : ''}`} onClick={() => setPreset(v)}>{l}</button>)}
+              {([['day', 'Hoje'], ['week', 'Semana'], ['month', 'Mês'], ['quarter', 'Trimestre'], ['year', 'Ano'], ['all', 'Tudo'], ['custom', 'Personalizado']] as [Preset, string][]).map(([v, l]) => <button key={v} className={`chip ${preset === v ? 'active' : ''}`} onClick={() => setPreset(v)}>{l}</button>)}
             </div>
           </Field>
           {preset === 'custom' && (

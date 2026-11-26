@@ -27,6 +27,7 @@ test.describe('navegação simplificada', () => {
     await seedV1(page)
     await openApp(page)
     await expect(page.getByRole('button', { name: 'Iniciar compra' })).toBeVisible()
+    await expect(page.getByRole('button', { name: 'Iniciar compra' })).toContainText('Controle seus gastos em tempo real')
     await expect(page.locator('svg.chart')).toHaveCount(0)
     await expect(page.getByRole('region', { name: 'Resumo do mês' })).toBeVisible()
     await expect(page.getByRole('region', { name: 'Listas recentes' })).toContainText('Minha Lista')
@@ -36,7 +37,11 @@ test.describe('navegação simplificada', () => {
     await page.getByRole('button', { name: 'Combustível' }).click()
     await expect(page.getByRole('heading', { name: 'Combustível' })).toBeVisible()
     await page.goBack()
-    await page.getByRole('button', { name: 'Produtos' }).click()
+    await page.getByRole('button', { name: 'Comparar preços' }).click()
+    await expect(page.getByRole('tab', { name: 'Comparar', selected: true })).toBeVisible()
+    // catálogo: acessível pelas configurações
+    await page.getByRole('button', { name: 'Configurações' }).click()
+    await page.getByRole('button', { name: /Catálogo de produtos/ }).click()
     await expect(page.getByRole('heading', { name: 'Catálogo de produtos' })).toBeVisible()
   })
 

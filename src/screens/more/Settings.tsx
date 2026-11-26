@@ -6,6 +6,7 @@ import { updateSettings } from '@/store/actions'
 import { useTheme, type ThemeChoice } from '@/hooks/useTheme'
 import { usePwa, applyUpdate } from '@/hooks/usePwa'
 import { Button } from '@/components/ui'
+import { navigate } from '@/router'
 import BackupSection from './Backup'
 
 export default function Settings() {
@@ -14,6 +15,11 @@ export default function Settings() {
   const pwa = usePwa()
   return (
     <Page title="Configurações" backTo="/" noGear>
+      <button className="list-card" onClick={() => navigate('/catalogo')}>
+        <span className="tile"><Icon name="Package" size={22} /></span>
+        <span className="grow"><b style={{ display: 'block' }}>Catálogo de produtos</b><span className="small muted">Produtos reconhecidos neste aparelho e histórico de preços</span></span>
+        <Icon name="ChevronRight" size={18} />
+      </button>
       <Card className="stack">
         <h2 style={{ fontSize: 16 }}>Aparência</h2>
         <Segmented<ThemeChoice> value={choice} onChange={setChoice} label="Tema" options={[{ value: 'system', label: 'Sistema' }, { value: 'light', label: 'Claro' }, { value: 'dark', label: 'Escuro' }]} />
