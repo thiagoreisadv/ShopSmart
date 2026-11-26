@@ -50,7 +50,7 @@ async function networkFirstShell(request) {
 
 async function cacheFirst(request, cacheName) {
   const cache = await caches.open(cacheName)
-  const hit = await cache.match(request, { ignoreSearch: false })
+  const hit = await cache.match(request, { ignoreVary: true })
   if (hit) return hit
   const res = await fetch(request)
   if (res && res.ok) cache.put(request, res.clone())
@@ -59,7 +59,7 @@ async function cacheFirst(request, cacheName) {
 
 async function staleWhileRevalidate(request, cacheName) {
   const cache = await caches.open(cacheName)
-  const hit = await cache.match(request)
+  const hit = await cache.match(request, { ignoreVary: true })
   const net = fetch(request).then((res) => { if (res && res.ok) cache.put(request, res.clone()); return res }).catch(() => null)
   return hit || (await net) || Response.error()
 }
@@ -85,6 +85,6 @@ self.addEventListener('fetch', (event) => {
     return
   }
   event.respondWith(
-    caches.open(SHELL_CACHE).then(async (cache) => (await cache.match(req)) || staleWhileRevalidate(req, RUNTIME_CACHE)),
+    caches.open(SHELL_CACHE).then(async (cache) => (await cache.match(req, { ignoreVary: true })) || staleWhileRevalidate(req, RUNTIME_CACHE)),
   )
 })

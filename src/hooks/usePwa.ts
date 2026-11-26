@@ -1,6 +1,7 @@
 import { useEffect, useState, useSyncExternalStore } from 'react'
 
 let waiting: ServiceWorker | null = null
+let updateRequested = false
 let installPrompt: (Event & { prompt: () => Promise<void>; userChoice: Promise<{ outcome: string }> }) | null = null
 const listeners = new Set<() => void>()
 const emit = () => listeners.forEach((l) => l())
@@ -43,7 +44,8 @@ export function registerServiceWorker(): void {
     .catch((e) => console.warn('[ShopSmart] SW não registrado', e))
   let reloading = false
   navigator.serviceWorker.addEventListener('controllerchange', () => {
-    if (reloading) return
+    // só recarrega quando o usuário pediu a atualização (a 1ª instalação também dispara controllerchange)
+    if (reloading || !updateRequested) return
     reloading = true
     window.location.reload()
   })
@@ -51,6 +53,7 @@ export function registerServiceWorker(): void {
 
 export function applyUpdate(): void {
   // os dados ficam no IndexedDB e a sessão de compra é salva a cada alteração: recarregar é seguro
+  updateRequested = true
   waiting?.postMessage({ type: 'SKIP_WAITING' })
 }
 
