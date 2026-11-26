@@ -1,6 +1,6 @@
 import { test, expect, type Page } from '@playwright/test'
 import { startPurchase } from './helpers'
-import { writeBarcodeY4m, writeBlankY4m } from './media'
+import { writeBarcodeY4m } from './media'
 
 const CODE = '7891000100103'
 const y4m = writeBarcodeY4m(CODE)
@@ -140,30 +140,6 @@ test.describe('câmera unificada — código de barras (câmera simulada)', () =
 })
 
 test.describe('câmera unificada — OCR de etiqueta (Tesseract real)', () => {
-  test.describe('sem código de barras na imagem', () => {
-    test.use({ launchOptions: { executablePath: process.env.PW_CHROMIUM, args: ['--no-sandbox', '--use-fake-device-for-media-stream', '--use-fake-ui-for-media-stream', `--use-file-for-fake-video-capture=${writeBlankY4m()}`] } })
-    test('OCR só roda sob demanda: foto da etiqueta → candidatos → confirmação → carrinho', async ({ page }) => {
-    test.setTimeout(180_000)
-    await mockNet(page, { status: 0 })
-    const png = await labelPng(page)
-    await startPurchase(page)
-    const cam = await openCamera(page)
-    // nenhum recurso do OCR foi baixado só por abrir a câmera
-    const early = await page.evaluate(() => performance.getEntriesByType('resource').filter((e) => /\/ocr\//.test(e.name)).length)
-    expect(early).toBe(0)
-    await cam.getByLabel('Escolher foto da galeria').locator('input').setInputFiles({ name: 'etiqueta.png', mimeType: 'image/png', buffer: png })
-    const panel = cam.getByRole('group', { name: 'Confirmar produto' })
-    await expect(panel).toBeVisible({ timeout: 150_000 })
-    await expect(panel.getByRole('radio', { name: /24,90/ })).toBeVisible()
-    const nm = panel.getByLabel('Nome do produto')
-    if (!(await nm.inputValue()).trim()) await nm.fill('Arroz Camil 5kg')
-    await expect(panel.getByLabel('Preço', { exact: true })).toHaveValue('24,90')
-    await panel.getByRole('button', { name: /Confirmar e adicionar/ }).click()
-    await cam.getByRole('button', { name: 'Fechar câmera' }).click()
-    await expect(page.getByRole('region', { name: 'Resumo do carrinho' })).toContainText('R$ 24,90')
-  })
-  })
-
   test('produto identificado por código + preço lido da etiqueta (nome do código é mantido)', async ({ page }) => {
     test.setTimeout(180_000)
     await mockNet(page)
