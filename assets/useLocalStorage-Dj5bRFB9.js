@@ -1,1 +1,0 @@
-import{An as e,In as t}from"./index-CZ8F38Ok.js";var n=t(e(),1);function r(e,t){let[r,i]=(0,n.useState)(()=>{try{let n=localStorage.getItem(e);return n===null?t:JSON.parse(n)}catch{return t}});return[r,(0,n.useCallback)(t=>{i(n=>{let r=typeof t==`function`?t(n):t;try{localStorage.setItem(e,JSON.stringify(r))}catch{}return r})},[e])]}export{r as t};

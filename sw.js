@@ -3,10 +3,10 @@
  * - Nunca toca no IndexedDB/localStorage: atualizar o app não apaga dados nem interrompe uma compra em andamento.
  * - Cache de runtime (catálogo de produtos e motor OCR) é preservado entre versões.
  */
-const VERSION = '4c16a15b699b'
+const VERSION = '8535e75dc29f'
 const SHELL_CACHE = `shopsmart-shell-${VERSION}`
 const RUNTIME_CACHE = 'shopsmart-runtime-v1'
-const PRECACHE = ["assets/AnimatedNumber-BGOq9orl.js", "assets/Backup-DKwOXZY3.js", "assets/BarcodeScanner-D0LCd2O2.js", "assets/Catalog-DWkbGHsg.js", "assets/Comparator-BxS3_hxB.js", "assets/Finance-BaukNNjk.js", "assets/FuelCalc-C1y5OQne.js", "assets/Home-DEnMjlTz.js", "assets/LabelCapture-BE4hrwZW.js", "assets/Lists-C-ieU-IA.js", "assets/More-n8rF1mx7.js", "assets/Page-D0grTyJD.js", "assets/PriceHistory-DVoNElLN.js", "assets/Purchases-CM6Xl1N1.js", "assets/Settings-BQRh3h1M.js", "assets/Sheet-iHvLaWr2.js", "assets/Shop-BihtRP4_.js", "assets/UnitCalc-6_qr-5Ij.js", "assets/compare-DR3liXT4.js", "assets/dates-DTgnwrxv.js", "assets/decode-D5pDNuwq.js", "assets/download-DecS7t1q.js", "assets/engine-CE0VP1jB.js", "assets/finance-SE8Tap4R.js", "assets/index-BoXG_6ZU.css", "assets/index-CZ8F38Ok.js", "assets/lookup-CIvNS9v8.js", "assets/prices-BKzWI3tn.js", "assets/src-DZede7jg.js", "assets/useCamera-COgHHa8K.js", "assets/useLocalStorage-Dj5bRFB9.js", "favicon.svg", "icons/apple-touch-icon.png", "icons/icon-192.png", "icons/icon-512.png", "icons/icon-maskable-512.png", "index.html", "manifest.webmanifest"]
+const PRECACHE = ["assets/AnimatedNumber-D4TMDQDw.js", "assets/Catalog-BkX7-wG2.js", "assets/Charts-DZrnz-aS.js", "assets/Comparator-EMKsxfxv.js", "assets/Finance-C56cFo4J.js", "assets/FuelCalc-D3-Kzlm0.js", "assets/Home-CNJHPegO.js", "assets/Lists-Bh069eyd.js", "assets/Page-BDBJGBqi.js", "assets/Purchases-BMMygxCd.js", "assets/Settings-Bgb3riKN.js", "assets/Sheet-CqMeNIO0.js", "assets/Shop-j9QAR3bP.js", "assets/SmartCapture-JDtl8_Q9.js", "assets/UnitCalc-BUlLSeEW.js", "assets/dates-waE83WNH.js", "assets/decode-D5pDNuwq.js", "assets/download-DecS7t1q.js", "assets/engine-BAZqA7Fi.js", "assets/finance-Dwx_Ehjo.js", "assets/index-B9Om_X5P.css", "assets/index-DKXmaMMv.js", "assets/lookup-BFURfXf7.js", "assets/prices-DnNGY-jR.js", "assets/src-IM7fgiv4.js", "assets/useLocalStorage-Cq20jf0-.js", "favicon.svg", "icons/apple-touch-icon.png", "icons/icon-192.png", "icons/icon-512.png", "icons/icon-maskable-512.png", "index.html", "manifest.webmanifest"]
 const SCOPE = self.registration.scope
 
 const abs = (p) => new URL(p, SCOPE).href

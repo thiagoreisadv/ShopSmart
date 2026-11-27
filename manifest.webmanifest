@@ -1,5 +1,5 @@
 {
-  "id": "/ShopSmart/",
+  "id": "shopsmart",
   "name": "ShopSmart",
   "short_name": "ShopSmart",
   "description": "Compre melhor. Economize mais. Listas, compra inteligente, comparação de preços e controle financeiro.",
@@ -18,7 +18,7 @@
     { "src": "icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
   ],
   "shortcuts": [
-    { "name": "Iniciar compra", "short_name": "Compra", "url": "./#/compra", "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }] },
-    { "name": "Finanças", "short_name": "Finanças", "url": "./#/financas", "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }] }
+    { "name": "Iniciar compra", "short_name": "Compra", "url": "./#/comprar", "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }] },
+    { "name": "Gastos", "short_name": "Gastos", "url": "./#/gastos", "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }] }
   ]
 }
