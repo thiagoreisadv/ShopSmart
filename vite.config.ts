@@ -5,7 +5,7 @@ import { createHash } from 'node:crypto'
 import { readFileSync, writeFileSync, readdirSync, statSync } from 'node:fs'
 import { join, relative, resolve } from 'node:path'
 
-const BASE = '/ShopSmart/'
+const BASE = process.env.VITE_BASE ?? '/ShopSmart/'
 
 /** Gera a lista de pré-cache e a versão do Service Worker a partir do build. */
 function swPrecache(): Plugin {
