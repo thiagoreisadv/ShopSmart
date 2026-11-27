@@ -258,6 +258,10 @@ function Active({ purchase, onDone }: { purchase: Purchase; onDone: (p: Purchase
   const [menu, setMenu] = useState(false)
   const [catOpen, setCatOpen] = useState(false)
   const [listOpen, setListOpen] = useState(false)
+  useEffect(() => {
+    document.body.classList.add('has-dock')
+    return () => document.body.classList.remove('has-dock')
+  }, [])
 
   const totals = cartTotals(purchase.items, purchase.checkoutDiscountCents)
   const bs = budgetStatus(totals.totalCents, purchase.budgetCents)

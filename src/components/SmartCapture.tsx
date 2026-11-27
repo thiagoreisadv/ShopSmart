@@ -69,6 +69,10 @@ export default function SmartCapture({
   const externalEnabled = useAppState((s) => s.settings.catalogLookupExternal)
 
   useEffect(() => {
+    document.body.classList.add('camera-open')
+    return () => document.body.classList.remove('camera-open')
+  }, [])
+  useEffect(() => {
     alive.current = true
     return () => {
       alive.current = false

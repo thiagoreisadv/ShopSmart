@@ -430,3 +430,8 @@ a { color: var(--primary); }
 .cap-panel .pid { display: flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 600; color: var(--primary-soft-text); }
 .cap-panel .bigprice input { font-size: 22px; font-weight: 650; min-height: 52px; }
 .cap-panel .confirm-btn { width: 100%; min-height: 52px; font-size: 16px; }
+
+/* toasts não cobrem a barra de ações da compra nem o painel da câmera */
+body.has-dock .toasts { bottom: calc(var(--nav-h) + var(--safe-b) + 92px); }
+body.camera-open .toasts { bottom: auto; top: calc(var(--safe-t) + 66px); }
+@media (min-width: 900px) { body.has-dock .toasts { bottom: 24px; } }
